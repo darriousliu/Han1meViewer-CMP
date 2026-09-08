@@ -53,8 +53,8 @@ desugarJdkLibs = "2.1.5"
 composeBom = "2026.08.00"
 compose-material3 = "1.5.0-alpha26"
 webview = "1.0.3"
-# iOS 与共享 API 的稳定版；桌面 TAO 版本通过 mediampTaoVersion 属性指定。
-mediamp = "0.4.0"
+# 共享 API、iOS AVKit 与桌面 TAO 使用同版 fork。
+mediamp = "0.4.0-tao"
 kotlinxIo = "0.9.1"
 material3Adaptive = "1.3.0"
 jbMaterial3Adaptive = "1.3.0-beta02"
@@ -163,11 +163,12 @@ media3-exoplayer = { group = "androidx.media3", name = "media3-exoplayer", versi
 media3-exoplayer-hls = { group = "androidx.media3", name = "media3-exoplayer-hls", version.ref = "exoplayer" }
 media3-cast = { group = "androidx.media3", name = "media3-cast", version.ref = "exoplayer" }
 mpv-lib = { group = "com.github.abdallahmehiz", name = "mpv-android", version.ref = "mpv" }
-# MediaMP：桌面 = libmpv，iOS = AVKit。commonMain 侧只用 mediamp-api，
+# MediaMP：桌面 = libmpv，iOS = AVKit。jvmIosMain 侧只用 mediamp-api，
 # 后端各自在 jvmMain / iosMain 里引，Android 不碰（那边是自带的 ExoPlayer/mpv 三内核）。
-mediamp-api = { module = "org.openani.mediamp:mediamp-api", version.ref = "mediamp" }
-mediamp-avkit = { module = "org.openani.mediamp:mediamp-avkit", version.ref = "mediamp" }
-# 桌面 libmpv/TAO 与原生 runtime 通过 mediampTaoVersion 配置（见 shared、desktopApp）。
+mediamp-api = { module = "io.github.darriousliu.mediamp:mediamp-api", version.ref = "mediamp" }
+mediamp-avkit = { module = "io.github.darriousliu.mediamp:mediamp-avkit", version.ref = "mediamp" }
+mediamp-mpv-tao = { module = "io.github.darriousliu.mediamp:mediamp-mpv-tao", version.ref = "mediamp" }
+# 桌面按平台选择原生 runtime，并读取同一 mediamp 版本。
 
 # Other
 datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }

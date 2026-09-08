@@ -153,9 +153,8 @@ kotlin {
             // 桌面的下载要断点续传，得能追加写；FileKit 的 write 是整文件覆盖。
             // iOS 走 NSURLSession 后台下载，落盘由系统负责，用不上。
             implementation(libs.kotlinx.io.core)
-            // TAO 集成是独立桌面模块；iOS AVKit 继续使用上面的稳定版。
-            val taoVersion = providers.gradleProperty("mediampTaoVersion").get()
-            implementation("io.github.darriousliu.mediamp:mediamp-mpv-tao:$taoVersion")
+            // TAO 集成是独立桌面模块；iOS 使用同版 fork 的 AVKit 后端。
+            implementation(libs.mediamp.mpv.tao)
             implementation(libs.nucleus.application)
             implementation(libs.nucleus.window.tao)
             // 系统原生通知（Windows Toast / macOS UNUserNotification / Linux libnotify），
@@ -319,15 +318,3 @@ val generateHKeyframeIndex = tasks.register("generateHKeyframeIndex") {
     }
 }
 kotlin.sourceSets.getByName("commonMain").kotlin.srcDir(generateHKeyframeIndex)
-
-// 仅 JVM 目标统一到 TAO fork，替换共享 API 的旧坐标以避免重复类。
-// jvmIosMain 是桌面与 iOS 共用的 metadata，继续使用上游稳定 API。
-configurations.configureEach {
-    if (name.startsWith("jvm", ignoreCase = true) && !name.startsWith("jvmIos", ignoreCase = true)) {
-        resolutionStrategy.eachDependency {
-            if (requested.group == "org.openani.mediamp" || requested.group == "io.github.darriousliu.mediamp") {
-                useTarget("io.github.darriousliu.mediamp:${requested.name}:${providers.gradleProperty("mediampTaoVersion").get()}")
-            }
-        }
-    }
-}

@@ -104,15 +104,10 @@ dependencies {
         "mediamp 没有 $triple 的原生运行时"
     }
     // 帧使用/释放协议新增 JNI，native 必须与 Kotlin 适配同版；不回退到缺少 TAO JNI 的正式版。
-    mpvNativeRuntime("io.github.darriousliu.mediamp:mediamp-mpv-runtime-$triple:${providers.gradleProperty("mediampTaoVersion").get()}")
+    mpvNativeRuntime("io.github.darriousliu.mediamp:mediamp-mpv-runtime-$triple:${libs.versions.mediamp.get()}")
 }
 
 configurations.configureEach {
-    resolutionStrategy.eachDependency {
-        if (requested.group == "org.openani.mediamp" || requested.group == "io.github.darriousliu.mediamp") {
-            useTarget("io.github.darriousliu.mediamp:${requested.name}:${providers.gradleProperty("mediampTaoVersion").get()}")
-        }
-    }
     exclude(group = "org.jetbrains.compose.material", module = "material-icons-extended")
 }
 
