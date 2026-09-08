@@ -29,11 +29,11 @@ import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
-import io.github.kdroidfilter.webview.web.LoadingState
-import io.github.kdroidfilter.webview.web.WebView
-import io.github.kdroidfilter.webview.web.WebViewNavigator
-import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
-import io.github.kdroidfilter.webview.web.rememberWebViewState
+import dev.nucleusframework.webview.web.LoadingState
+import dev.nucleusframework.webview.web.WebView
+import dev.nucleusframework.webview.web.WebViewNavigator
+import dev.nucleusframework.webview.web.rememberWebViewNavigator
+import dev.nucleusframework.webview.web.rememberWebViewState
 import io.github.daisukikaffuchino.han1meviewer.USER_AGENT
 import org.jetbrains.compose.resources.getString
 import han1meviewer.shared.generated.resources.complete_cloudflare_verification_with_warning
@@ -44,7 +44,7 @@ import han1meviewer.shared.generated.resources.version_check_failed
 import io.github.daisukikaffuchino.han1meviewer.util.NativeWebViewHolder
 import io.github.daisukikaffuchino.han1meviewer.util.enableDomStorage
 import io.github.daisukikaffuchino.han1meviewer.util.readWebViewCookies
-import io.github.kdroidfilter.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.NativeWebView
 import io.github.daisukikaffuchino.utils.LogUtil
 import kotlin.coroutines.resume
 import kotlin.time.Duration.Companion.seconds
@@ -74,7 +74,7 @@ fun CloudflareScreen(
     val baseWarning = stringResource(Res.string.complete_cloudflare_verification_with_warning)
     var tipText by remember { mutableStateOf(baseWarning) }
 
-    // 桌面端只能顺着原生对象够到 WebView 的 cookie 存储
+    // iOS 直接读取 WKWebView Cookie；桌面使用新版库自带的 CookieManager。
     val webViewHolder = remember { NativeWebViewHolder() }
 
     var solved by remember { mutableStateOf(false) }

@@ -43,21 +43,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.backhandler.BackHandler
 import kotlinx.coroutines.launch
-import io.github.kdroidfilter.webview.request.RequestInterceptor
-import io.github.kdroidfilter.webview.request.WebRequest
-import io.github.kdroidfilter.webview.request.WebRequestInterceptResult
-import io.github.kdroidfilter.webview.web.LoadingState
-import io.github.kdroidfilter.webview.web.WebView
-import io.github.kdroidfilter.webview.web.WebViewNavigator
-import io.github.kdroidfilter.webview.web.rememberWebViewNavigator
-import io.github.kdroidfilter.webview.web.rememberWebViewState
+import dev.nucleusframework.webview.request.RequestInterceptor
+import dev.nucleusframework.webview.request.WebRequest
+import dev.nucleusframework.webview.request.WebRequestInterceptResult
+import dev.nucleusframework.webview.web.LoadingState
+import dev.nucleusframework.webview.web.WebView
+import dev.nucleusframework.webview.web.WebViewNavigator
+import dev.nucleusframework.webview.web.rememberWebViewNavigator
+import dev.nucleusframework.webview.web.rememberWebViewState
 import io.github.daisukikaffuchino.han1meviewer.HANIME_LOGIN_URL
 import io.github.daisukikaffuchino.han1meviewer.HanimeConstants.HANIME_URL
 import io.github.daisukikaffuchino.han1meviewer.USER_AGENT
 import io.github.daisukikaffuchino.han1meviewer.util.NativeWebViewHolder
 import io.github.daisukikaffuchino.han1meviewer.util.enableDomStorage
 import io.github.daisukikaffuchino.han1meviewer.util.readWebViewCookies
-import io.github.kdroidfilter.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.NativeWebView
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -76,7 +76,7 @@ fun LoginScreen(
         isJavaScriptEnabled = true
     }
 
-    // 桌面端只能顺着原生对象够到 WebView 的 cookie 存储
+    // iOS 直接读取 WKWebView Cookie；桌面使用新版库自带的 CookieManager。
     val webViewHolder = remember { NativeWebViewHolder() }
 
     // 登录成功会重定向回站内首页，只取一次（重定向会带出多个请求）

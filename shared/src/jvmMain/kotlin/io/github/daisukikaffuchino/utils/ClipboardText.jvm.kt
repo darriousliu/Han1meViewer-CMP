@@ -1,20 +1,20 @@
+@file:Suppress("DEPRECATION")
+
 package io.github.daisukikaffuchino.utils
 
 import androidx.compose.runtime.Composable
-import java.awt.Toolkit
-import java.awt.datatransfer.DataFlavor
-import java.awt.datatransfer.StringSelection
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 
 @Composable
-actual fun rememberReadClipboardText(): suspend () -> String? = {
-    runCatching {
-        Toolkit.getDefaultToolkit().systemClipboard
-            .getData(DataFlavor.stringFlavor) as? String
-    }.getOrNull()
+actual fun rememberReadClipboardText(): suspend () -> String? {
+    val clipboard = LocalClipboardManager.current
+    return remember(clipboard) { { clipboard.getText()?.text } }
 }
 
 @Composable
-actual fun rememberCopyTextToClipboard(): (CharSequence) -> Unit = { text ->
-    Toolkit.getDefaultToolkit().systemClipboard
-        .setContents(StringSelection(text.toString()), null)
+actual fun rememberCopyTextToClipboard(): (CharSequence) -> Unit {
+    val clipboard = LocalClipboardManager.current
+    return remember(clipboard) { { text -> clipboard.setText(AnnotatedString(text.toString())) } }
 }

@@ -1,5 +1,6 @@
 package io.github.daisukikaffuchino.han1meviewer.ui.screen.account
 
+import io.github.daisukikaffuchino.han1meviewer.util.LocalFileDialogSettings
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -113,7 +114,8 @@ fun AccountScreen(
 ) {
     val uriHandler = LocalUriHandler.current
     val avatarPickerLauncher = rememberFilePickerLauncher(
-        type = FileKitType.Image
+        type = FileKitType.Image,
+        dialogSettings = LocalFileDialogSettings.current
     ) { file ->
         file?.let { onOpenAvatarCrop(it.path) }
     }

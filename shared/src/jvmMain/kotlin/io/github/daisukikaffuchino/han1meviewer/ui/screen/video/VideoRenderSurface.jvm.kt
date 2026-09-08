@@ -9,15 +9,11 @@ import androidx.compose.ui.graphics.Color
 import io.github.daisukikaffuchino.han1meviewer.ui.player.MediampPlaybackEngine
 import io.github.daisukikaffuchino.han1meviewer.ui.player.PlaybackEngine
 import org.openani.mediamp.mpv.MpvMediampPlayer
-import org.openani.mediamp.mpv.compose.MpvMediampPlayerSurface
+import org.openani.mediamp.mpv.tao.TaoMpvMediampPlayerSurface
 
 /**
- * 桌面端的画面走 mpv 自己的渲染面：原生渲染线程把帧写进 GPU 纹理环
- * （macOS Metal/IOSurface、Windows D3D11 共享句柄、Linux GLX），
- * 再由 Skiko 直接采样，全程不过 CPU。
- *
- * 画面的信箱化（ContentScale.Fit 那种效果）由 mpv 侧按 AspectRatioMode.FIT 自己做，
- * 我们只负责给它一个盒子。
+ * 显式使用 TAO 渲染面，由 mediamp 的可选适配模块管理 GPU context 和帧生命周期。
+ * 画面的信箱化仍由 mpv 按 AspectRatioMode.FIT 完成。
  */
 @Composable
 actual fun VideoRenderSurface(
@@ -30,5 +26,5 @@ actual fun VideoRenderSurface(
         Box(modifier = modifier.fillMaxSize().background(Color.Black))
         return
     }
-    MpvMediampPlayerSurface(player, modifier = modifier.fillMaxSize())
+    TaoMpvMediampPlayerSurface(player, modifier = modifier.fillMaxSize())
 }

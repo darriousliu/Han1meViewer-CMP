@@ -11,7 +11,7 @@ private const val TAG = "MpvRuntime"
 
 /**
  * Nucleus/Compose 打包时写进启动参数的应用资源目录。
- * `./gradlew run`、`runDistributable`、装好的应用三种形态都有，直接从 IDE 跑 main 没有。
+ * 普通 run、桌面 Hot Reload、runDistributable 和装好的应用都有；直接从 IDE 跑 main 没有。
  */
 private const val APP_RESOURCES_DIR = "compose.application.resources.dir"
 
@@ -41,7 +41,7 @@ fun prewarmMpvRuntime() {
             val dir = System.getProperty(APP_RESOURCES_DIR)
                 ?: error(
                     "没有 $APP_RESOURCES_DIR：libmpv 在应用资源目录里，" +
-                            "要用 ./gradlew run / runDistributable 或装好的应用启动"
+                            "要用 :desktopApp:run / :desktopApp:hotRun / runDistributable 或装好的应用启动"
                 )
             MPVHandle.setRuntimeLibraryDirectory(dir, extractRuntimeLibrary = false)
             LogUtil.d(TAG, "libmpv 预热完成，耗时 ${(System.nanoTime() - startedAt) / 1_000_000}ms")

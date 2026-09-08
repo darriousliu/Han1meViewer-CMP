@@ -1,7 +1,7 @@
 package io.github.daisukikaffuchino.han1meviewer.ui.player
 
 import org.openani.mediamp.MediampPlayer
-import org.openani.mediamp.mpv.MpvMediampPlayerFactory
+import org.openani.mediamp.mpv.tao.TaoMpvMediampPlayerFactory
 import java.io.File
 import kotlin.coroutines.CoroutineContext
 
@@ -15,7 +15,7 @@ internal actual fun createMediampPlayer(parentCoroutineContext: CoroutineContext
     // 原生库由 prewarmMpvRuntime() 在启动时预热，这里只是确认它跑完了——
     // 两边同时配置运行时目录会被 mediamp 判成「重复配置」直接抛。
     awaitMpvRuntimePrewarm()
-    return MpvMediampPlayerFactory().create(Unit, parentCoroutineContext)
+    return TaoMpvMediampPlayerFactory().create(Unit, parentCoroutineContext)
 }
 
 /**
@@ -30,4 +30,4 @@ internal actual fun MediampPlayer.nativeSnapshot(): NativePlaybackSnapshot =
 
 internal actual fun MediampPlayer.allowExternalPlayback() = Unit
 
-internal actual fun localPathToUri(path: String): String = File(path).toURI().toString()
+internal actual fun localPathToUri(path: String): String = File(path).toPath().toUri().toString()

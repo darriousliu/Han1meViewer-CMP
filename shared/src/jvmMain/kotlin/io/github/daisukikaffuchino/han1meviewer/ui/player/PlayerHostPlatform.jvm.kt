@@ -2,25 +2,25 @@ package io.github.daisukikaffuchino.han1meviewer.ui.player
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.awt.ComposeWindow
-import androidx.compose.ui.window.WindowPlacement
+import dev.nucleusframework.application.NucleusWindow
 import io.github.daisukikaffuchino.han1meviewer.ui.window.LocalDesktopWindow
 
-private class DesktopPlayerHost(private val window: ComposeWindow?) : PlayerHostPlatform {
+private class DesktopPlayerHost(private val window: NucleusWindow?) : PlayerHostPlatform {
 
     /** 退出全屏要还原成进全屏之前的摆放方式，不能一律回 Floating。 */
-    private var placementBeforeFullscreen: WindowPlacement? = null
+    private var maximizedBeforeFullscreen: Boolean? = null
 
     override fun setFullscreen(enabled: Boolean, preferPortrait: Boolean) {
         val window = window ?: return
         if (enabled) {
-            if (placementBeforeFullscreen == null) {
-                placementBeforeFullscreen = window.placement
+            if (maximizedBeforeFullscreen == null) {
+                maximizedBeforeFullscreen = window.isMaximized
             }
-            window.placement = WindowPlacement.Fullscreen
+            window.setFullscreen(true)
         } else {
-            window.placement = placementBeforeFullscreen ?: WindowPlacement.Floating
-            placementBeforeFullscreen = null
+            window.setFullscreen(false)
+            maximizedBeforeFullscreen?.let(window::setMaximized)
+            maximizedBeforeFullscreen = null
         }
     }
 

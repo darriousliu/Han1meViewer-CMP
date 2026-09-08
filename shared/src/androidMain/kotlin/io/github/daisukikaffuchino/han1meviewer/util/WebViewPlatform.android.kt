@@ -2,7 +2,7 @@ package io.github.daisukikaffuchino.han1meviewer.util
 
 import android.webkit.CookieManager
 import io.github.daisukikaffuchino.han1meviewer.logic.network.HCookieJar
-import io.github.kdroidfilter.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.NativeWebView
 
 actual fun NativeWebView.enableDomStorage() {
     settings.domStorageEnabled = true

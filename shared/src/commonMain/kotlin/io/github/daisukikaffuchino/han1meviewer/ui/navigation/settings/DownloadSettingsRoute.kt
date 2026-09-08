@@ -1,5 +1,6 @@
 package io.github.daisukikaffuchino.han1meviewer.ui.navigation.settings
 
+import io.github.daisukikaffuchino.han1meviewer.util.LocalFileDialogSettings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,7 +78,9 @@ fun DownloadSettingsRouteScreen(embedded: Boolean = false) {
     val dao = remember { DownloadDatabase.instance.hanimeDownloadDao }
     val uiState = remember(settings) { buildDownloadSettingsUiState() }
 
-    val openDirectoryPicker = rememberDirectoryPickerLauncher { file ->
+    val openDirectoryPicker = rememberDirectoryPickerLauncher(
+        dialogSettings = LocalFileDialogSettings.current,
+    ) { file ->
         if (file != null) {
             coroutineScope.launch {
                 if (persistDownloadDirectory(file)) {

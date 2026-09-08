@@ -19,14 +19,8 @@ coreSplashscreen = "1.2.0"
 documentFile = "1.1.0"
 glance = "1.1.1"
 kotlin = "2.4.10"
-# 暂时停在 1.11 线：composewebview(1.0.0-beta-02，已是最新)编译在 Compose 1.10，
-# 而 SwingPanel(background: Color, ...) 在 1.12.0-beta01 改成了 Color?，旧签名
-# SwingPanel-euL9pac 直接消失，桌面端一进 WebView 就 NoSuchMethodError。
-# 等库跟进 1.12 之后再升，升级时先跑一遍桌面的登录页与过盾页，
-# 并复查 desktopApp/Main.kt 里那句关闭无障碍的 compose.accessibility.enable
-#（1.11.1 的桌面 a11y 有空指针，进登录页必崩）。
-# 注意 Android 侧的 composeBom / compose-material3 不受这里影响，保持最新。
-composeMultiplatform = "1.11.1"
+# TAO 与新版 WebView 需要 Compose 1.12；Android BOM 仍独立维护。
+composeMultiplatform = "1.12.0"
 composeMultiplatformMaterial3 = "1.11.0-alpha07"
 ksp = "2.3.11"
 # Dependencies
@@ -58,11 +52,9 @@ exoplayer = "1.11.0"
 desugarJdkLibs = "2.1.5"
 composeBom = "2026.08.00"
 compose-material3 = "1.5.0-alpha26"
-webview = "1.0.0-beta-02"
-# 桌面(libmpv)与 iOS(AVKit)的播放内核。上游 Animeko 就是在 CMP 1.11.1 + Kotlin 2.4.10
-# 这套组合上跑 0.3.2 的——mediamp 的 Windows D3D 后端要反射读 Skiko 内部结构，
-# 换 CMP 版本前先确认 mediamp 也跟着升，别单方面动其中一个。
-mediamp = "0.3.2"
+webview = "1.0.3"
+# iOS 与共享 API 的稳定版；桌面 TAO 版本通过 mediampTaoVersion 属性指定。
+mediamp = "0.4.0"
 kotlinxIo = "0.9.1"
 material3Adaptive = "1.3.0"
 jbMaterial3Adaptive = "1.3.0-beta02"
@@ -70,12 +62,8 @@ mpv = "v0.1.7"
 m3color = "2026.7.27"
 benManes = "0.61.0"
 buildKonfig = "0.22.0"
-# Nucleus：桌面构建/打包框架，接管原来 compose.desktop 那套 jpackage 流程。
-# 2.5.0 自身编在 CMP 1.12.0 上，但只有「带 Compose 的模块」会把 compose-desktop 顶到 1.12.0
-# （nucleus-application / decorated-window-* / darkmode-detector），本工程一律不引这些——
-# 桌面播放内核 mediamp 的渲染面要走 AWT 的 SkiaLayer，而 Tao 窗口没有 AWT，
-# 引进来等于换后端，播放页会黑屏。只取下面那几个不依赖 Compose 的模块，CMP 就能继续停在 1.11.1。
-nucleus = "2.5.0"
+# Nucleus 2.5.x 与 Compose 1.12.0 配套，桌面窗口使用 TAO。
+nucleus = "2.5.15"
 
 [libraries]
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
@@ -150,10 +138,8 @@ jetbrains-material3-window-size = { module = "org.jetbrains.compose.material3:ma
 material3-adaptive = { module = "androidx.compose.material3.adaptive:adaptive", version.ref = "material3Adaptive" }
 jetbrains-material3-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "jbMaterial3Adaptive" }
 # CMP WebView（Android=WebView / iOS=WKWebView / desktop=Nucleus Tao）。登录页和过盾页用。
-compose-webview-multiplatform = { module = "io.github.kdroidfilter:composewebview", version.ref = "webview" }
+compose-webview-multiplatform = { module = "dev.nucleusframework:composewebview", version.ref = "webview" }
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinxIo" }
-# Compose Desktop 的事件循环在 Swing EDT 上，没有它 Dispatchers.Main 无实现
-coroutines-swing = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-swing", version.ref = "coroutines" }
 
 # Parse
 serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
@@ -180,14 +166,8 @@ mpv-lib = { group = "com.github.abdallahmehiz", name = "mpv-android", version.re
 # MediaMP：桌面 = libmpv，iOS = AVKit。commonMain 侧只用 mediamp-api，
 # 后端各自在 jvmMain / iosMain 里引，Android 不碰（那边是自带的 ExoPlayer/mpv 三内核）。
 mediamp-api = { module = "org.openani.mediamp:mediamp-api", version.ref = "mediamp" }
-mediamp-mpv = { module = "org.openani.mediamp:mediamp-mpv", version.ref = "mediamp" }
 mediamp-avkit = { module = "org.openani.mediamp:mediamp-avkit", version.ref = "mediamp" }
-# libmpv 的原生库按 OS+架构分包，桌面发行版只带当前构建机那一个（见 desktopApp/build.gradle.kts）
-mediamp-mpv-runtime-windows-x64 = { module = "org.openani.mediamp:mediamp-mpv-runtime-windows-x64", version.ref = "mediamp" }
-mediamp-mpv-runtime-windows-arm64 = { module = "org.openani.mediamp:mediamp-mpv-runtime-windows-arm64", version.ref = "mediamp" }
-mediamp-mpv-runtime-linux-x64 = { module = "org.openani.mediamp:mediamp-mpv-runtime-linux-x64", version.ref = "mediamp" }
-mediamp-mpv-runtime-macos-x64 = { module = "org.openani.mediamp:mediamp-mpv-runtime-macos-x64", version.ref = "mediamp" }
-mediamp-mpv-runtime-macos-arm64 = { module = "org.openani.mediamp:mediamp-mpv-runtime-macos-arm64", version.ref = "mediamp" }
+# 桌面 libmpv/TAO 与原生 runtime 通过 mediampTaoVersion 配置（见 shared、desktopApp）。
 
 # Other
 datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "datetime" }
@@ -195,8 +175,9 @@ desugar-jdk-libs = { group = "com.android.tools", name = "desugar_jdk_libs", ver
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutlibraries" }
 htmlconverter = { module = "be.digitalia.compose.htmlconverter:htmlconverter", version.ref = "htmlconverter" }
 
-# Nucleus 桌面运行时。只列不依赖 Compose 的模块——带 Compose 的会把 compose-desktop
-# 顶到 1.12.0，见 [versions] 里 nucleus 那段说明。
+# Nucleus 窗口、打包与运行时模块保持同一版本。
+nucleus-application = { module = "dev.nucleusframework:nucleus.nucleus-application", version.ref = "nucleus" }
+nucleus-window-tao = { module = "dev.nucleusframework:nucleus.decorated-window-tao", version.ref = "nucleus" }
 nucleus-aot-runtime = { module = "dev.nucleusframework:nucleus.aot-runtime", version.ref = "nucleus" }
 # 系统原生通知。common 负责 API，三个后端各自实现，运行时按 classpath 上有哪个来分派，
 # 所以三个都要引（跨平台打包时也只有当前 OS 那个会被真正用到）。

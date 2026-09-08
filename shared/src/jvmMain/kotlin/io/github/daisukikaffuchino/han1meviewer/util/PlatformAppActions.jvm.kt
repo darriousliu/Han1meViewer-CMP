@@ -1,11 +1,11 @@
 package io.github.daisukikaffuchino.han1meviewer.util
 
 import androidx.compose.runtime.Composable
+import io.github.daisukikaffuchino.han1meviewer.ui.window.LocalDesktopWindow
 import han1meviewer.shared.generated.resources.Res
 import han1meviewer.shared.generated.resources.action_not_support
 import io.github.daisukikaffuchino.utils.LogUtil
 import io.github.daisukikaffuchino.utils.SonnerToast
-import java.awt.Desktop
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -40,13 +40,19 @@ private fun restartCommand(): List<String>? {
     val mainClass = System.getProperty("sun.java.command")?.substringBefore(' ')
         ?.takeIf { it.isNotBlank() } ?: return null
     val javaBin = File(File(javaHome, "bin"), "java").path
-    return listOf(javaBin, "-cp", classPath, mainClass)
+    val nativeWindowArgs = if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
+        listOf("-XstartOnFirstThread")
+    } else emptyList()
+    return listOf(javaBin) + nativeWindowArgs + listOf("-cp", classPath, mainClass)
 }
 
 actual val canRestartApplication: Boolean = true
 
 @Composable
-actual fun rememberExitApp(): () -> Unit = { exitProcess(0) }
+actual fun rememberExitApp(): () -> Unit {
+    val window = LocalDesktopWindow.current
+    return { window?.close() }
+}
 
 // 桌面端没有防截屏，也没有「重建 Activity」的概念，返回 null 让调用方隐藏/跳过
 @Composable
@@ -65,18 +71,28 @@ actual fun openInExternalPlayer(
     chooserTitle: String,
     onVideoMissing: () -> Unit,
 ) {
-    val file = File(videoUri.removePrefix("file://"))
+    val file = runCatching {
+        if (videoUri.startsWith("file:")) File(java.net.URI(videoUri)) else File(videoUri)
+    }.getOrNull()
+    if (file == null) {
+        onVideoMissing()
+        return
+    }
     if (!file.isFile) {
         onVideoMissing()
         return
     }
-    val desktop = runCatching {
-        Desktop.getDesktop().takeIf { it.isSupported(Desktop.Action.OPEN) }
-    }.getOrNull()
-    if (desktop == null) {
-        SonnerToast.warning(Res.string.action_not_support)
-        return
-    }
-    runCatching { desktop.open(file) }
+    runCatching { openDesktopFile(file) }
         .onFailure { SonnerToast.warning(Res.string.action_not_support) }
+}
+
+/** 使用系统打开器，避免为文件关联初始化 AWT 窗口事件循环。 */
+internal fun openDesktopFile(file: File) {
+    val command = when {
+        System.getProperty("os.name").startsWith("Mac", ignoreCase = true) -> listOf("open", file.absolutePath)
+        System.getProperty("os.name").startsWith("Windows", ignoreCase = true) ->
+            listOf("rundll32.exe", "url.dll,FileProtocolHandler", file.toPath().toUri().toString())
+        else -> listOf("xdg-open", file.toPath().toUri().toString())
+    }
+    ProcessBuilder(command).start()
 }

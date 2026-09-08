@@ -1,6 +1,6 @@
 package io.github.daisukikaffuchino.han1meviewer.util
 
-import io.github.kdroidfilter.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.NativeWebView
 import kotlinx.coroutines.suspendCancellableCoroutine
 import platform.Foundation.NSHTTPCookie
 import platform.Foundation.NSHTTPCookieStorage

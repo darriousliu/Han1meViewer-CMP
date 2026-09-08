@@ -1,5 +1,6 @@
 package io.github.daisukikaffuchino.han1meviewer.ui.navigation.settings
 
+import io.github.daisukikaffuchino.han1meviewer.util.LocalFileDialogSettings
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -121,7 +122,6 @@ import io.github.daisukikaffuchino.han1meviewer.util.restartApplication
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Clock
 import org.jetbrains.compose.resources.getString
-import io.github.vinceglb.filekit.dialogs.FileKitDialogSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -145,7 +145,7 @@ fun HomeSettingsRouteScreen(
     var pendingImportFile by remember { mutableStateOf<PlatformFile?>(null) }
 
     val exportLauncher = rememberFileSaverLauncher(
-        dialogSettings = FileKitDialogSettings.createDefault()
+        dialogSettings = LocalFileDialogSettings.current
     ) { file ->
         file ?: return@rememberFileSaverLauncher
         coroutineScope.launch(Dispatchers.IO) {
@@ -155,7 +155,8 @@ fun HomeSettingsRouteScreen(
         }
     }
     val importLauncher = rememberFilePickerLauncher(
-        type = FileKitType.File("json")
+        type = FileKitType.File("json"),
+        dialogSettings = LocalFileDialogSettings.current
     ) { file ->
         pendingImportFile = file
     }

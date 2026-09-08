@@ -1,6 +1,6 @@
 package io.github.daisukikaffuchino.han1meviewer.util
 
-import io.github.kdroidfilter.webview.web.NativeWebView
+import dev.nucleusframework.webview.web.NativeWebView
 
 /**
  * Android 的 WebView 默认不开 DOM storage，而 Cloudflare 过盾页要用 localStorage。
@@ -11,8 +11,8 @@ expect fun NativeWebView.enableDomStorage()
 /**
  * 直接从平台的 WebView cookie 存储里取该域下的 cookie，拼成 `a=1; b=2`。
  *
- * [webView] 是 `WebView(onCreated = ...)` 回调给出的原生对象，桌面端只能顺着它才够得到
- * cookie 存储；还没建好时传 null。
+ * [webView] 是 `WebView(onCreated = ...)` 回调给出的原生对象；iOS 通过它读取
+ * WKWebView Cookie，桌面回落到新版库的 CookieManager；还没建好时传 null。
  *
  * 返回 null 表示这个平台没有自己的取法（或这次没取到），调用方回落到 webview 库的 CookieManager。
  */
@@ -24,7 +24,7 @@ internal expect suspend fun clearPlatformCookies()
 /**
  * 装 `WebView(onCreated = ...)` 回调给出的原生对象，交给 [readWebViewCookies] 用。
  *
- * 那个回调是 SwingPanel / AndroidView 的 factory 发的，不在组合期，所以用普通持有者
+ * 那个回调由 NativeView / AndroidView 的创建过程发出，不在组合期，所以用普通持有者
  * 而不是 Compose 状态：它只会被赋一次值，没必要为它引一次重组。
  */
 internal class NativeWebViewHolder {
@@ -36,7 +36,7 @@ internal class NativeWebViewHolder {
  * cookie 的域可能带前导点表示「含子域」，`hanime1.me` 要能命中 `.hanime1.me`。
  *
  * 站点下发的关键 cookie（登录态、cf_clearance）都是这种带点的域，
- * 按域名精确匹配会把它们整批漏掉——iOS 与桌面读原生 cookie 存储时都要按这个口径过滤。
+ * 按域名精确匹配会把它们整批漏掉——iOS 直接读取原生 cookie 存储时按这个口径过滤。
  */
 internal fun String.matchesCookieDomain(domain: String?): Boolean {
     val bare = domain?.trimStart('.')?.lowercase().orEmpty()

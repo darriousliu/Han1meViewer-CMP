@@ -153,12 +153,13 @@ kotlin {
             // 桌面的下载要断点续传，得能追加写；FileKit 的 write 是整文件覆盖。
             // iOS 走 NSURLSession 后台下载，落盘由系统负责，用不上。
             implementation(libs.kotlinx.io.core)
-            // 桌面三平台统一 libmpv；渲染面（MpvMediampPlayerSurface）也在这个 artifact 里。
-            // 原生库是单独的 runtime 包，在 :desktopApp 里按构建机的 OS 引。
-            implementation(libs.mediamp.mpv)
+            // TAO 集成是独立桌面模块；iOS AVKit 继续使用上面的稳定版。
+            val taoVersion = providers.gradleProperty("mediampTaoVersion").get()
+            implementation("io.github.darriousliu.mediamp:mediamp-mpv-tao:$taoVersion")
+            implementation(libs.nucleus.application)
+            implementation(libs.nucleus.window.tao)
             // 系统原生通知（Windows Toast / macOS UNUserNotification / Linux libnotify），
-            // 取代原来挂 AWT 托盘图标发消息那套。这几个模块不依赖 Compose，
-            // 不会把 compose-desktop 顶到 1.12.0。
+            // 与窗口模块使用相同的 Nucleus 版本。
             implementation(libs.bundles.nucleus.notification)
             // 应用内更新（下载 + 差分 + 安装重启）。检查有无新版仍走 commonMain 的
             // AppUpdateChecker，两者分工见 logic/update/InAppUpdater.kt 的注释。
@@ -318,3 +319,15 @@ val generateHKeyframeIndex = tasks.register("generateHKeyframeIndex") {
     }
 }
 kotlin.sourceSets.getByName("commonMain").kotlin.srcDir(generateHKeyframeIndex)
+
+// 仅 JVM 目标统一到 TAO fork，替换共享 API 的旧坐标以避免重复类。
+// jvmIosMain 是桌面与 iOS 共用的 metadata，继续使用上游稳定 API。
+configurations.configureEach {
+    if (name.startsWith("jvm", ignoreCase = true) && !name.startsWith("jvmIos", ignoreCase = true)) {
+        resolutionStrategy.eachDependency {
+            if (requested.group == "org.openani.mediamp" || requested.group == "io.github.darriousliu.mediamp") {
+                useTarget("io.github.darriousliu.mediamp:${requested.name}:${providers.gradleProperty("mediampTaoVersion").get()}")
+            }
+        }
+    }
+}

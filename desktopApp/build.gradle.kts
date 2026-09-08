@@ -3,8 +3,7 @@ import dev.nucleusframework.desktop.application.dsl.TargetFormat
 
 plugins {
     alias(libs.plugins.kotlin.jvm)
-    // 仍然保留 JetBrains 的 compose 插件：Nucleus 只接管打包，compose 的依赖访问器
-    // （compose.desktop.currentOs）和 IDE 集成还得靠它
+    // Compose 插件提供依赖访问器和 IDE 集成，Nucleus 提供 TAO 窗口和打包。
     alias(libs.plugins.compose.multiplatform)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.nucleus)
@@ -88,28 +87,32 @@ val unpackMpvNatives = tasks.register<Sync>("unpackMpvNatives") {
 dependencies {
     implementation(project(":shared"))
     implementation(compose.desktop.currentOs)
-    implementation(libs.coroutines.swing)
+    implementation(libs.nucleus.application)
+    implementation(libs.nucleus.window.tao)
     implementation(libs.compose.multiplatform.ui.tooling.preview)
 
     implementation(libs.filekit.core)
+    implementation(libs.filekit.dialogs)
 
-    // AOT cache 的运行时判定（AotRuntime.isTraining），训练轮要靠它自杀退出
+    // AOT 训练由 nucleusApplication 的 aotTraining 正常结束事件循环。
     implementation(libs.nucleus.aot.runtime)
 
     // 桌面播放内核 libmpv 的原生库。只有当前平台这一条，跨平台打包要在目标 OS 上各构建一次。
     // 注意是 mpvNativeRuntime 不是 runtimeOnly：它只作为打包期的解包来源，不进运行时 classpath。
-    when (val triple = osTriple()) {
-        "windows-x64" -> mpvNativeRuntime(libs.mediamp.mpv.runtime.windows.x64)
-        "windows-arm64" -> mpvNativeRuntime(libs.mediamp.mpv.runtime.windows.arm64)
-        "linux-x64" -> mpvNativeRuntime(libs.mediamp.mpv.runtime.linux.x64)
-        "macos-x64" -> mpvNativeRuntime(libs.mediamp.mpv.runtime.macos.x64)
-        "macos-arm64" -> mpvNativeRuntime(libs.mediamp.mpv.runtime.macos.arm64)
-        // 上游没发 linux-arm64 的 mpv runtime，那台机器上只能构建出没有播放能力的包
-        else -> logger.warn("mediamp 没有 $triple 的 mpv runtime，本次构建产物无法播放视频")
+    val triple = osTriple()
+    require(triple in setOf("windows-x64", "windows-arm64", "linux-x64", "macos-x64", "macos-arm64")) {
+        "mediamp 没有 $triple 的原生运行时"
     }
+    // 帧使用/释放协议新增 JNI，native 必须与 Kotlin 适配同版；不回退到缺少 TAO JNI 的正式版。
+    mpvNativeRuntime("io.github.darriousliu.mediamp:mediamp-mpv-runtime-$triple:${providers.gradleProperty("mediampTaoVersion").get()}")
 }
 
 configurations.configureEach {
+    resolutionStrategy.eachDependency {
+        if (requested.group == "org.openani.mediamp" || requested.group == "io.github.darriousliu.mediamp") {
+            useTarget("io.github.darriousliu.mediamp:${requested.name}:${providers.gradleProperty("mediampTaoVersion").get()}")
+        }
+    }
     exclude(group = "org.jetbrains.compose.material", module = "material-icons-extended")
 }
 
@@ -122,6 +125,10 @@ configurations.configureEach {
  */
 nucleus.application {
     mainClass = "io.github.daisukikaffuchino.han1meviewer.MainKt"
+    // 普通 run 与安装器也必须从 macOS 首线程启动；插件只为 Hot Reload 自动注入。
+    if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
+        jvmArgs("-XstartOnFirstThread")
+    }
 
     nativeDistributions {
         appResourcesRootDir.set(appResourcesRoot)
@@ -194,4 +201,19 @@ nucleus.application {
 // 名字对上 Nucleus 的 prepareAppResources / prepareSandboxedAppResources 两个 Sync。
 tasks.matching { it.name.endsWith("AppResources") }.configureEach {
     dependsOn(unpackMpvNatives)
+}
+
+// Hot Reload 独立于 Nucleus 的 run：不会继承应用资源目录，也不会执行 prepareAppResources。
+// 配置期设置参数，才能同时进入 IDE/Async 使用的 argfile；不能延迟到 doFirst。
+tasks.configureEach {
+    val taskTypes = generateSequence<Class<*>>(javaClass) { it.superclass }.map { it.name }.toSet()
+    if (this is JavaExec && "org.jetbrains.compose.reload.gradle.AbstractComposeHotRun" in taskTypes) {
+        dependsOn(unpackMpvNatives)
+        systemProperty("compose.application.resources.dir", appResourcesRoot.get().dir("common").asFile.absolutePath)
+    }
+    // Async 只执行 argfile 生成任务，不执行 HotRun 本身；clean 后也必须先解包。
+    // ComposeHotArgFileTask 是插件 internal 类型，按继承链识别以避免依赖其内部 Kotlin API。
+    if ("org.jetbrains.compose.reload.gradle.ComposeHotArgFileTask" in taskTypes) {
+        dependsOn(unpackMpvNatives)
+    }
 }
