@@ -15,7 +15,7 @@ private const val TAG = "InAppUpdate"
  * （见 desktopApp/build.gradle.kts 里的 `publish { github { } }`）。
  */
 private const val GITHUB_OWNER = "darriousliu"
-private const val GITHUB_REPO = "Han1meViewer1"
+private const val GITHUB_REPO = "Han1meViewer-CMP"
 
 private val updater by lazy {
     NucleusUpdater {

@@ -143,7 +143,7 @@ nucleus.application {
         // 构建期跑一轮训练，把类加载与 JIT profile 落成 app.aot 随包发。
         // 冷启动省掉 JVM 预热，代价是每次打包多一轮约 45 秒的训练运行。
         enableAotCache = true
-        homepage = "https://github.com/darriousliu/Han1meViewer1"
+        homepage = "https://github.com/darriousliu/Han1meViewer-CMP"
         // 产物直接按发布名出，CI 里那串 cp 改名必须去掉——latest*.yml 的 url 字段就是
         // 这里定的文件名，发布时再改名更新器会 404。
         // 不用 ${name}：它取的是 electron-builder 的小写 name（han1meviewer）。
@@ -162,7 +162,7 @@ nucleus.application {
             github {
                 enabled = true
                 owner = "darriousliu"
-                repo = "Han1meViewer1"
+                repo = "Han1meViewer-CMP"
             }
         }
 

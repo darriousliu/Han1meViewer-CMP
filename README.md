@@ -8,7 +8,7 @@
 
 Han1meViewer+ 是用于浏览、搜索、播放和管理 hanime 相关视频内容的客户端。CMP 版本基于 Kotlin Multiplatform 与 Compose Multiplatform，将主要界面和业务逻辑共享到 **Android、iOS、Windows 和 macOS**，延续 Material 3 界面、播放管理和大屏布局。
 
-本应用没有任何官方网站。[本仓库 GitHub Releases](https://github.com/darriousliu/Han1meViewer1/releases) 是唯一的正式版下载及更新渠道。各平台实际提供的版本以 Release 附件和说明为准。
+本应用没有任何官方网站。[本仓库 GitHub Releases](https://github.com/darriousliu/Han1meViewer-CMP/releases) 是唯一的正式版下载及更新渠道。各平台实际提供的版本以 Release 附件和说明为准。
 
 **上游[原仓库](https://github.com/misaka10032w/Han1meViewer)已回归，本项目的诞生离不开在此之前的所有贡献者！**
 
