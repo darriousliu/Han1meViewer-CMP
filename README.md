@@ -2,21 +2,68 @@
 
 本软件不接受任何形式的公开宣传。若出现公开宣传、搬运或引流，仓库维护者可能随时归档或隐藏仓库，并删除已编译的发行版。
 
-# 🌸 Han1meViewer+
+# 🌸 Han1meViewer+ · CMP
 
 🔞 **R18 警告：未满 18 岁禁止下载和使用。**
 
-Han1meViewer 是一个使用 Kotlin 开发的 Android 客户端，用于浏览、搜索、播放和管理 hanime 相关公开视频页面内容。当前项目以 Jetpack Compose、Material 3、Navigation 3、ViewModel、StateFlow、Retrofit、Jsoup、Room、DataStore、WorkManager、Media3/MPV 为主要技术栈，围绕视频浏览、详情播放、搜索、用户列表、下载管理、评论、订阅、设置和隐私保护等功能组织。
+Han1meViewer+ 是用于浏览、搜索、播放和管理 hanime 相关视频内容的客户端。CMP 版本基于 Kotlin Multiplatform 与 Compose Multiplatform，将主要界面和业务逻辑共享到 **Android、iOS、Windows 和 macOS**，延续 Material 3 界面、播放管理和大屏布局。
 
-本应用没有任何官方网站。GitHub Release 是唯一下载及更新渠道。
-
-~~本项目[原仓库](https://github.com/misaka10032w/Han1meViewer)已归档。因为对项目弃坑感到惋惜，同时也是原项目的使用者，所以现由我进行接下来的维护。~~
+本应用没有任何官方网站。[本仓库 GitHub Releases](https://github.com/darriousliu/Han1meViewer1/releases) 是唯一的正式版下载及更新渠道。各平台实际提供的版本以 Release 附件和说明为准。
 
 **上游[原仓库](https://github.com/misaka10032w/Han1meViewer)已回归，本项目的诞生离不开在此之前的所有贡献者！**
 
-还请大家好好看片，不要去打击用爱发电的开发者们的积极性
+还请大家好好看片，不要去打击用爱发电的开发者们的积极性。
 
-# 📱 应用截图
+## 📦 下载与安装
+
+在 Release 页展开 **Assets**，按设备选择安装包：
+
+| 平台 | 当前发布范围 | 选择的附件 | 安装与更新 |
+| --- | --- | --- | --- |
+| Android | Android 10+，`arm64-v8a` | `*-android-arm64-v8a.apk` | 下载 APK 安装；覆盖升级需包名和签名一致 |
+| iOS / iPadOS | iOS 15.0+，arm64 真机 | `*-ios.ipa` | 需自行重签后侧载；当前不通过 App Store / TestFlight 分发 |
+| Windows | x64 | `*-win-x64.exe` 或 `*-win-x64.zip` | EXE 为安装版，支持应用内更新；ZIP 为免安装版，需手动更新 |
+| macOS | Apple 芯片，arm64 | `*-mac-arm64.dmg` | 将应用放入「应用程序」；安装版支持应用内更新 |
+
+- iOS 附件只有临时 ad-hoc 签名，没有 Apple 开发者分发签名，不能直接点开安装。
+- macOS 当前产物未公证。遇到系统拦截时，按该版本的 Release 安装说明处理。
+- macOS 的 `*-mac-arm64.zip` 用于自动更新；`latest*.yml` 和 `*.blockmap` 是更新元数据，日常安装无需下载。
+- 当前不提供 Linux、Intel Mac 或 Windows ARM 的正式安装包。Android APK 不支持 32 位 ARM 和 x86 设备。
+
+### 从 Android 旧版升级
+
+升级前可在设置中导出备份。同包名、同发布签名的 APK 才能覆盖安装；来自其他分支、其他签名的安装包不能保证直接升级。Debug 版带 `.debug` 包名后缀，与正式版分开安装。
+
+备份包含设置和部分本地记录，不打包视频文件，也不包含登录 Cookie。换设备或跨平台恢复后，需要重新登录、选择下载目录，并按需迁移或扫描已有视频文件。
+
+## ✨ 主要功能
+
+- 首页浏览、关键词与高级搜索、搜索历史、预览及 Getchu 内容入口。
+- 视频详情、系列与推荐、评论、收藏、稍后观看、播放列表、订阅和观看历史。
+- 清晰度切换、倍速、播放进度恢复、本地视频、关键 H 帧与播放手势。
+- 下载队列、暂停与恢复、下载分组和分类、目录选择、已有文件扫描与导入。
+- 手机、横屏、平板与桌面布局；播放页提供经典和分栏两种大屏样式。
+- WebView 登录、手动 Cookie 导入、Cloudflare 验证和网络设置。
+- 主题、语言、备份恢复与签到日历；隐私和系统功能按平台提供。
+
+### 平台差异
+
+| 功能 | Android | iOS / iPadOS | Windows / macOS |
+| --- | --- | --- | --- |
+| 播放内核 | ExoPlayer / MediaPlayer / mpv | AVKit / AVPlayer | libmpv |
+| Anime4K 超分 | mpv 内核可用 | 不提供 | 不提供 |
+| 画中画 | 支持 | 支持，受系统和播放状态影响 | 不提供 |
+| 投屏 | Google Cast | AirPlay | 不提供 |
+| 下载限速 | 支持 | 不提供；后台下载由系统调度 | 支持 |
+| 自定义 DNS / DoH | 支持 | 不提供 | 支持 |
+| 生物识别应用锁 | 支持 | 支持 | 尚未实现 |
+| 防截屏、动态取色、签到小组件 | 支持 | 不提供 | 不提供 |
+
+移动端不提供后台纯音频播放，离开应用后继续播放主要通过画中画实现。各平台功能仍需结合系统权限、设备能力和对应版本说明使用。
+
+## 📱 应用截图
+
+以下为已有的 Android 手机、横屏与平板界面截图，其他平台的界面以对应版本实机为准。
 
 ### 手机端
 
@@ -34,47 +81,18 @@ Han1meViewer 是一个使用 Kotlin 开发的 Android 客户端，用于浏览�
 | 播放页 | 播放详情 | 下载管理 |
 | ![平板端播放页](image/screenshots/tablet_palyer_1.png) | ![平板端播放详情](image/screenshots/tablet_player_2.png) | ![平板端下载管理](image/screenshots/tablet_download.png) |
 
-# 📜 目前做了什么
+## 🛠 开发与贡献
 
-### 已移除
+当前工程由 `:shared` 共享模块、`:app` Android 壳、`:desktopApp` 桌面壳和 `iosApp` Xcode 工程组成。
 
-- Firebase 追踪统计模块
-- CI 更新频道
-- 旧外部存储读写权限与 Android 9 以下兼容代码
-- 创作中心、日本语翻译（日本网友无法访问H站，保留日语无意义）
-- 旧的主题、多语言和依赖传统 View 的工具类
-- JZVD
+- [技术文档](README_TECH.md)：源集、架构、开发入口与验证命令。
+- [正式版构建行动指南](正式版构建行动指南.md)：环境、版本、签名、四端打包与发布顺序。
+- [跨平台功能支持矩阵](跨平台功能支持矩阵.md)：迁移期的平台实现记录；具体行为以当前代码为准。
+- [共享关键 H 帧说明](shared/src/commonMain/composeResources/files/h_keyframes/README.md)：数据格式与贡献方法。
 
-### 当前功能与重构
+共享代码改动应检查 Android、JVM 和 iOS 受影响的编译目标；中间源集改动还需检查 metadata。常用命令见技术文档。修改列表与分页时检查重复 key；修改播放、下载、账号、Cookie、Cloudflare 或更新逻辑时，请说明验证平台、步骤和结果。
 
-- 使用 Material 3 和 Compose 重构主要页面、卡片、列表、弹窗和播放器界面，拥有更精致的 UI 和更好的一致性。
-- 主导航迁移至 Navigation 3，使用统一路由、顶层返回栈、页面级状态保存和预测性返回；登录、Cookie 手动导入及 Cloudflare 验证迁移到单 Activity 架构。
-- 将应用设置从 SharedPreferences 迁移到 Preferences DataStore，网络、Cookie、下载、播放器、主题、语言、签到、首页和备份等设置使用统一的数据流和仓储。
-- 完全重构的 ExoPlayer、MediaPlayer、MPV 三种播放链路，以及 Anime4K、关键 H 帧、清晰度切换、倍速、画中画、本地视频和播放手势。
-- “冲了么”小组件使用 Glance Compose 实现。
-- 播放页可选的平板模式现支持经典和分栏两种样式。
-- 支持使用 Google Cast 投屏到 Android TV 等支持的设备。
-
-### 近期修复和完善
-
-- 视频卡片解析适配网站结构变化，补全作者与时长显示，并增强解析失败、登录过期、Cloudflare 和 IP blocked 的状态提示。
-- 修复新播放器切换视频、重新挂载 Surface、暂停帧和横竖屏尺寸同步问题；修复播放器高度和页面切换时的状态同步。
-- 播放页推荐区和经典平板侧栏改用惰性列表，避免超大离屏图层导致 RenderThread 崩溃；搜索筛选标签改为连续折叠，减少滚动抖动。
-- 优化了超大字号下的标题显示和横屏挖孔区域安全边距，在所有设备上的体验更一致。
-- 强化 Cloudflare 验证后的 Cookie 主机隔离、并发等待、取消与超时处理；退出登录后及时清理相关状态。
-
-## 🤝 贡献说明
-
-- 提交代码前请先确认可以通过 `:app:compileDebugKotlin`。
-- 修改网络列表、分页或 Compose `Lazy*` 列表时，请检查重复 key 风险。
-- 修改播放、下载、账号、Cookie、Cloudflare、更新逻辑时，请尽量说明验证方式。
-- 提交共享关键 H 帧可参考 `.github/PULL_REQUEST_TEMPLATE/submit_h_keyframe.md`。
-
-## 🧩 TODO
-
-- 以后再说
-
-# 📄 许可证
+## 📄 许可证
 
 - 本项目作为包含 GPLv3 派生代码的整体，按 GNU GPLv3 发布。
 - 项目包含来自 [MomoQR](https://github.com/daisukiKaffuChino/MomoQR) 的代码，归属作者 daisukiKaffuChino，并遵循 GPLv3。

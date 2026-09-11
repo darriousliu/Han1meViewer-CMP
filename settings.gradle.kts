@@ -1,3 +1,5 @@
+@file:Suppress("UnstableApiUsage")
+
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -18,5 +20,5 @@ plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
 }
 
-rootProject.name = "Han1meViewer"
+rootProject.name = "Han1meViewer-CMP"
 include(":app", ":shared", ":desktopApp")
