@@ -135,7 +135,9 @@ static bool get_path(char *out_path) {
                 line[ptr] = '\0';
                 ptr = 0;
 
-                if (std::strstr(line, "/base.apk") && std::strstr(line, "chino")) {
+                // 安装路径按当前应用包名匹配，不能依赖旧作者名中的片段。
+                if (std::strstr(line, "/base.apk") &&
+                    std::strstr(line, "io.github.darriousliu.han1meviewer")) {
                     char *p = std::strchr(line, '/');
                     if (p) {
 

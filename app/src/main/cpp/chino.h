@@ -11,7 +11,8 @@
 
 #define XOR_KEY 0x66
 
-#define EXPECTED_SIG_HASH "f28a4e14d2a2c5014be546cb1aff7aaf0bdcf8ea8534a29f9c35c20a4aa8cfe7"
+// CMP 首次发布证书的 SHA-256；私钥保存在本机 .secrets/android-release/。
+#define EXPECTED_SIG_HASH "04aefa693c7df32e743a855645595d922732f1b33ccabb53f0f9ebae32216ded"
 
 extern "C" {
 JNIEXPORT jboolean JNICALL

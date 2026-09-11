@@ -25,7 +25,7 @@ Han1meViewer+ 是用于浏览、搜索、播放和管理 hanime 相关视频内�
 | Windows | x64 | `*-win-x64.exe` 或 `*-win-x64.zip` | EXE 为安装版，支持应用内更新；ZIP 为免安装版，需手动更新 |
 | macOS | Apple 芯片，arm64 | `*-mac-arm64.dmg` | 将应用放入「应用程序」；安装版支持应用内更新 |
 
-- iOS 附件只有临时 ad-hoc 签名，没有 Apple 开发者分发签名，不能直接点开安装。
+- iOS 附件采用临时 ad-hoc 自签名，没有 Apple 开发者分发签名，需重签侧载。
 - macOS 当前产物未公证。遇到系统拦截时，按该版本的 Release 安装说明处理。
 - macOS 的 `*-mac-arm64.zip` 用于自动更新；`latest*.yml` 和 `*.blockmap` 是更新元数据，日常安装无需下载。
 - 当前不提供 Linux、Intel Mac 或 Windows ARM 的正式安装包。Android APK 不支持 32 位 ARM 和 x86 设备。

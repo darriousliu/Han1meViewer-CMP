@@ -121,7 +121,7 @@ jobs:
             | 平台 | 产物 | 说明 |
             | --- | --- | --- |
             | Android | `*-android-arm64-v8a.apk` | 仅 arm64-v8a |
-            | iOS | `*-ios.ipa` | 未用开发者证书签名，需自行重签后侧载 |
+            | iOS | `*-ios.ipa` | 临时 ad-hoc 自签名，需自行重签后侧载 |
             | Windows | `*-win-x64.exe` / `*-win-x64.zip` | exe 为 NSIS 安装包（支持覆盖升级与差分自动更新），zip 为免安装版 |
             | macOS | `*-mac-arm64.dmg` / `*-mac-arm64.zip` | Apple 芯片；dmg 用于首装，zip 是自动更新用的，别手动下 |
 

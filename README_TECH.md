@@ -175,7 +175,7 @@ Room 的 Entity、DAO 和数据库声明在共享源码中，各平台生成实�
 
 `PlayerCapabilities`、`PlatformPictureInPicture` 和 `PlayerHostPlatform` 表达平台差异。不支持的设置应由能力判断隐藏。当前 Anime4K 仅 Android mpv 提供；桌面没有画中画和投屏，iOS 不提供自定义 DNS 与下载限速。完整差异记录见 [跨平台功能支持矩阵](跨平台功能支持矩阵.md)，其中的历史验证记录不能代替本次发布回归。
 
-Android 安装包签名检查仍使用 `app/src/main/cpp/chino.cpp` / `chino.h`。共享入口是 `util/SignatureCheck.kt`，Android actual 在 `shared/src/androidMain/.../util/SignatureCheck.android.kt`，其 `@file:JvmName("SignatureCheckKt")` 与 JNI 符号绑定。修改文件名或包名时需同时维护 JNI；Release 的证书核验见构建指南。
+Android 安装包签名检查仍使用 `app/src/main/cpp/chino.cpp` / `chino.h`。共享入口是 `util/SignatureCheck.kt`，Android actual 在 `shared/src/androidMain/.../util/SignatureCheck.android.kt`，其 `@file:JvmName("SignatureCheckKt")` 与 JNI 符号绑定。APK 定位条件包含应用包名，修改包名时需同时维护该条件和 JNI。`EXPECTED_SIG_HASH` 已对应 CMP 独立发布密钥；私钥保存在本机 Git 忽略的 `.secrets/android-release/`，证书核验与 CI Secrets 配置见构建指南。
 
 ## 8. 下载与文件
 

@@ -77,38 +77,71 @@ jobs:
 
       - name: 签名 APK
         # :app 里没有 signingConfig，assembleRelease 出来的是未签名包，这里用 build-tools 补签。
-        # 仓库没配 keystore secrets（或来自 fork 的 PR 拿不到 secrets）时跳过，
-        # 产物照样上传，但装不上机器。
+        # 普通构建没有 keystore secrets（例如 fork PR）时允许上传未签名产物；
+        # v* 标签的发布构建必须有完整的四项 secrets，证书也必须匹配原生校验。
         #
         # ⚠️ 必须用与 app/src/main/cpp/chino.h 里 EXPECTED_SIG_HASH 对应的那把发布密钥：
         # Release 版进视频页会做原生签名校验，换把钥匙签出来的包能装但进不去视频页。
-        # 换密钥的完整流程见《正式版构建行动指南.md》第 3 节。
+        # 签名配置见《正式版构建行动指南.md》第 4 节。
         env:
           KEYSTORE_BASE_64: ${{ secrets.KEYSTORE_BASE_64 }}
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEYSTORE_ALIAS: ${{ secrets.RELEASE_KEYSTORE_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
         run: |
+          set -euo pipefail
           if [ -z "$KEYSTORE_BASE_64" ]; then
+            if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+              echo "::error::发布构建缺少 KEYSTORE_BASE_64，拒绝生成未签名的正式 APK"
+              exit 1
+            fi
             echo "::warning title=APK 未签名::没有配置 KEYSTORE_BASE_64，本次产物是未签名 APK，无法直接安装"
             exit 0
           fi
-          echo "$KEYSTORE_BASE_64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          for secret_name in RELEASE_KEYSTORE_PASSWORD RELEASE_KEYSTORE_ALIAS RELEASE_KEY_PASSWORD; do
+            if [ -z "${!secret_name}" ]; then
+              echo "::error::缺少 Android 签名 Secret: $secret_name"
+              exit 1
+            fi
+          done
+          umask 077
+          trap 'rm -f "$RUNNER_TEMP/release.jks"' EXIT
+          printf '%s' "$KEYSTORE_BASE_64" | base64 -d > "$RUNNER_TEMP/release.jks"
+          EXPECTED_HASH="$(sed -n 's/^#define EXPECTED_SIG_HASH "\([0-9a-f]*\)"/\1/p' app/src/main/cpp/chino.h)"
+          if [[ ! "$EXPECTED_HASH" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::chino.h 中的 EXPECTED_SIG_HASH 必须是 64 位小写十六进制"
+            exit 1
+          fi
           BUILD_TOOLS="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)"
           for apk in app/build/outputs/apk/release/*.apk; do
             # 未签名包 AGP 不会对齐，必须先 zipalign 再 apksigner
-            "$BUILD_TOOLS/zipalign" -p -f 4 "$apk" "$apk.aligned"
+            "$BUILD_TOOLS/zipalign" -P 16 -f 4 "$apk" "$apk.aligned"
             "$BUILD_TOOLS/apksigner" sign \
               --ks "$RUNNER_TEMP/release.jks" \
               --ks-pass "env:RELEASE_KEYSTORE_PASSWORD" \
               --ks-key-alias "$RELEASE_KEYSTORE_ALIAS" \
               --key-pass "env:RELEASE_KEY_PASSWORD" \
+              --v2-signing-enabled true \
               --out "$apk" "$apk.aligned"
             rm -f "$apk.aligned" "$apk.idsig"
-            # 打印证书指纹，方便和 EXPECTED_SIG_HASH 对一眼
-            "$BUILD_TOOLS/apksigner" verify --print-certs "$apk"
+            VERIFY_OUTPUT="$("$BUILD_TOOLS/apksigner" verify --verbose --print-certs "$apk")"
+            printf '%s\n' "$VERIFY_OUTPUT"
+            # 默认验证会优先检查 v3；这里额外检查原生代码读取的 v2 签名块，
+            # 只改变签名验证范围，不改变应用的 minSdk 或支持平台。
+            V2_VERIFY_OUTPUT="$("$BUILD_TOOLS/apksigner" verify --min-sdk-version 24 --max-sdk-version 27 --verbose --print-certs "$apk")"
+            printf '%s\n' "$V2_VERIFY_OUTPUT"
+            if [[ "$V2_VERIFY_OUTPUT" != *"Verified using v2 scheme (APK Signature Scheme v2): true"* ]]; then
+              echo "::error::APK 缺少原生校验所需的有效 v2 签名"
+              exit 1
+            fi
+            # 兼容旧版 Signer #1 与新版 V2/V3.0 Signer 的输出前缀；所有证书必须一致。
+            ACTUAL_HASH="$(printf '%s\n%s\n' "$VERIFY_OUTPUT" "$V2_VERIFY_OUTPUT" | awk '/certificate SHA-256 digest:/ {print $NF}' | sort -u)"
+            if [ "$ACTUAL_HASH" != "$EXPECTED_HASH" ]; then
+              echo "::error::APK 签名证书与 EXPECTED_SIG_HASH 不一致，拒绝上传"
+              exit 1
+            fi
+            "$BUILD_TOOLS/zipalign" -c -P 16 4 "$apk"
           done
-          rm -f "$RUNNER_TEMP/release.jks"
 
       - name: 上传 APK
         uses: actions/upload-artifact@v7
@@ -128,7 +161,7 @@ jobs:
           retention-days: 30
 
   ios:
-    name: iOS（未签名 IPA）
+    name: iOS（临时自签名 IPA）
     if: inputs.platforms == 'all' || contains(inputs.platforms, 'ios')
     # 用 Intel Runner（14 GB 内存），不是 arm64 那台（只有 7 GB）：
     # :shared:linkReleaseFrameworkIosArm64 的 LTO 阶段实测 4 GB 堆必 OOM
@@ -192,8 +225,8 @@ jobs:
         run: ./gradlew syncIosVersion
 
       - name: 归档 iOS App
-        # 没有开发者证书，全程关掉签名：Release 配置里 DEVELOPMENT_TEAM 取自
-        # Configuration/Config.xcconfig 的 TEAM_ID（默认为空），这里再显式清一遍。
+        # 归档时不使用 Apple 开发者证书，显式关闭签名并清空 Team，
+        # 打包时再执行 codesign --sign - 临时自签名，不需要 iOS 签名 secrets。
         # 归档会触发 Compile Kotlin Framework 阶段，即 :shared:embedAndSignAppleFrameworkForXcode，
         # Swift 侧编译不过同样会在这里失败。
         run: |
@@ -210,7 +243,7 @@ jobs:
 
       - name: 打包成 IPA
         # 没有 exportOptions.plist 能用（那条路要真证书），手工拼 Payload/。
-        # ad-hoc 签名（codesign -s -）是 AltStore / SideStore 一类侧载工具的最低要求。
+        # codesign --sign - 生成临时 ad-hoc 自签名；用户安装时仍需用侧载工具重签。
         run: |
           APP="$RUNNER_TEMP/Han1meViewer.xcarchive/Products/Applications/Han1meViewer.app"
           if [ ! -d "$APP" ]; then
@@ -221,6 +254,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/Payload"
           cp -R "$APP" "$RUNNER_TEMP/Payload/"
           codesign --force --deep --sign - --timestamp=none "$RUNNER_TEMP/Payload/Han1meViewer.app"
+          codesign --verify --deep --strict --verbose=2 "$RUNNER_TEMP/Payload/Han1meViewer.app"
           mkdir -p "$GITHUB_WORKSPACE/artifacts"
           cd "$RUNNER_TEMP"
           zip -qry "$GITHUB_WORKSPACE/artifacts/Han1meViewer.ipa" Payload
