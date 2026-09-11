@@ -1,0 +1,247 @@
+package io.github.darriousliu.han1meviewer.ui.screen.settings
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import org.jetbrains.compose.resources.stringResource
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import io.github.darriousliu.han1meviewer.ui.component.ChoiceDialog
+import io.github.darriousliu.han1meviewer.ui.component.SettingNavigationItem
+import io.github.darriousliu.han1meviewer.ui.component.SettingsPlainBox
+import io.github.darriousliu.han1meviewer.ui.component.SettingSliderItem
+import io.github.darriousliu.han1meviewer.ui.component.SettingSwitchItem
+import io.github.darriousliu.han1meviewer.ui.component.segmentedGroup
+import io.github.darriousliu.han1meviewer.ui.component.segmentedSection
+import io.github.darriousliu.han1meviewer.ui.component.lazy.LazyColumn
+import io.github.darriousliu.han1meviewer.ui.preview.ComponentPreview
+import io.github.darriousliu.han1meviewer.generated.resources.Res
+import io.github.darriousliu.han1meviewer.generated.resources.default_playback_speed
+import io.github.darriousliu.han1meviewer.generated.resources.enable_google_cast
+import io.github.darriousliu.han1meviewer.generated.resources.google_cast_warning
+import io.github.darriousliu.han1meviewer.generated.resources.long_press_speed_multiplier
+import io.github.darriousliu.han1meviewer.generated.resources.moderate
+import io.github.darriousliu.han1meviewer.generated.resources.mpv_advanced_settings
+import io.github.darriousliu.han1meviewer.generated.resources.mpv_settings_disabled_summary
+import io.github.darriousliu.han1meviewer.generated.resources.show_bottom_progress
+import io.github.darriousliu.han1meviewer.generated.resources.slide_sensitivity
+import io.github.darriousliu.han1meviewer.generated.resources.switch_player_kernel
+import io.github.darriousliu.han1meviewer.generated.resources.current_slide_sensitivity
+import io.github.darriousliu.han1meviewer.generated.resources.enable_google_cast_summary
+import io.github.darriousliu.han1meviewer.generated.resources.google_cast_unavailable_summary
+import io.github.darriousliu.han1meviewer.generated.resources.ic_cast
+import io.github.darriousliu.han1meviewer.generated.resources.ic_player_setting
+import io.github.darriousliu.han1meviewer.generated.resources.ic_seek_bar
+import io.github.darriousliu.han1meviewer.generated.resources.ic_speed
+import io.github.darriousliu.han1meviewer.generated.resources.ic_speed_flash
+import io.github.darriousliu.han1meviewer.generated.resources.ic_touch_long
+import io.github.darriousliu.han1meviewer.generated.resources.long_press_speed_summary
+import io.github.darriousliu.han1meviewer.generated.resources.player_settings_casting
+import io.github.darriousliu.han1meviewer.generated.resources.player_settings_controls
+
+data class PlayerSettingsUiState(
+    val kernel: String,
+    val kernelDisplay: String,
+    val mpvSettingsEnabled: Boolean,
+    val mpvSettingsSummary: String,
+    val enableGoogleCast: Boolean,
+    val googleCastAvailable: Boolean?,
+    val showBottomProgress: Boolean,
+    val playerSpeed: String,
+    val playerSpeedLabel: String,
+    val longPressSpeedTimes: String,
+    val longPressSpeedTimesLabel: String,
+    val slideSensitivity: Int,
+    val slideSensitivitySummary: String,
+)
+
+private enum class PlayerChoiceDialog {
+    Kernel,
+    Speed,
+    LongPressSpeed,
+}
+
+@Composable
+fun PlayerSettingsScreen(
+    state: PlayerSettingsUiState,
+    kernelOptions: List<Pair<String, String>>,
+    speedOptions: List<Pair<String, String>>,
+    longPressSpeedOptions: List<Pair<String, String>>,
+    onKernelChange: (String) -> Unit,
+    onEnableGoogleCastChange: (Boolean) -> Unit,
+    onShowBottomProgressChange: (Boolean) -> Unit,
+    onPlayerSpeedChange: (String) -> Unit,
+    onLongPressSpeedChange: (String) -> Unit,
+    onSlideSensitivityChange: (Int) -> Unit,
+    onOpenMpvSettings: () -> Unit,
+) {
+    var activeDialog by rememberSaveable { mutableStateOf<PlayerChoiceDialog?>(null) }
+
+    ChoiceDialog(
+        visible = activeDialog == PlayerChoiceDialog.Kernel,
+        title = stringResource(Res.string.switch_player_kernel),
+        options = kernelOptions,
+        selectedValue = state.kernel,
+        onDismiss = { activeDialog = null },
+        onSelect = {
+            activeDialog = null
+            onKernelChange(it)
+        },
+    )
+
+    ChoiceDialog(
+        visible = activeDialog == PlayerChoiceDialog.Speed,
+        title = stringResource(Res.string.default_playback_speed),
+        options = speedOptions,
+        selectedValue = state.playerSpeed,
+        onDismiss = { activeDialog = null },
+        onSelect = {
+            activeDialog = null
+            onPlayerSpeedChange(it)
+        },
+    )
+
+    ChoiceDialog(
+        visible = activeDialog == PlayerChoiceDialog.LongPressSpeed,
+        title = stringResource(Res.string.long_press_speed_multiplier),
+        options = longPressSpeedOptions,
+        selectedValue = state.longPressSpeedTimes,
+        onDismiss = { activeDialog = null },
+        onSelect = {
+            activeDialog = null
+            onLongPressSpeedChange(it)
+        },
+    )
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        enableItemAnimation = false,
+        contentPadding = PaddingValues(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        segmentedSection(titleRes = Res.string.player_settings_controls) {
+            segmentedGroup {
+                // 只有一个内核的平台（桌面 / iOS）不渲染内核切换，
+                // mpv 高级设置同理——那三个内核都是 Android 专属的
+                if (kernelOptions.isNotEmpty()) {
+                    SettingNavigationItem(
+                        title = stringResource(Res.string.switch_player_kernel),
+                        valueText = state.kernelDisplay,
+                        iconRes = Res.drawable.ic_player_setting,
+                        onClick = { activeDialog = PlayerChoiceDialog.Kernel },
+                    )
+                    SettingNavigationItem(
+                        title = stringResource(Res.string.mpv_advanced_settings),
+                        summary = state.mpvSettingsSummary,
+                        iconRes = Res.drawable.ic_player_setting,
+                        onClick = onOpenMpvSettings,
+                        enabled = state.mpvSettingsEnabled,
+                        valueText = null,
+                    )
+                }
+                SettingSwitchItem(
+                    title = stringResource(Res.string.show_bottom_progress),
+                    checked = state.showBottomProgress,
+                    iconRes = Res.drawable.ic_seek_bar,
+                    onCheckedChange = onShowBottomProgressChange,
+                )
+                SettingNavigationItem(
+                    title = stringResource(Res.string.default_playback_speed),
+                    valueText = state.playerSpeedLabel,
+                    iconRes = Res.drawable.ic_speed,
+                    onClick = { activeDialog = PlayerChoiceDialog.Speed },
+                )
+                SettingNavigationItem(
+                    title = stringResource(Res.string.long_press_speed_multiplier),
+                    summary = stringResource(
+                        Res.string.long_press_speed_summary,
+                        state.longPressSpeedTimesLabel,
+                    ),
+                    valueText = state.longPressSpeedTimesLabel,
+                    iconRes = Res.drawable.ic_touch_long,
+                    onClick = { activeDialog = PlayerChoiceDialog.LongPressSpeed },
+                )
+                SettingSliderItem(
+                    title = stringResource(Res.string.slide_sensitivity),
+                    summary = state.slideSensitivitySummary,
+                    value = state.slideSensitivity,
+                    valueRange = 1..7,
+                    iconRes = Res.drawable.ic_speed_flash,
+                    onValueChange = onSlideSensitivityChange,
+                )
+            }
+        }
+
+        val castAvailable = state.googleCastAvailable
+        if (castAvailable != null) {
+            segmentedSection(titleRes = Res.string.player_settings_casting) {
+                segmentedGroup {
+                    SettingSwitchItem(
+                        title = stringResource(Res.string.enable_google_cast),
+                        summary = stringResource(
+                            if (castAvailable) {
+                                Res.string.enable_google_cast_summary
+                            } else {
+                                Res.string.google_cast_unavailable_summary
+                            }
+                        ),
+                        checked = state.enableGoogleCast,
+                        iconRes = Res.drawable.ic_cast,
+                        onCheckedChange = onEnableGoogleCastChange,
+                        enabled = castAvailable,
+                    )
+                }
+                item {
+                    SettingsPlainBox(stringResource(Res.string.google_cast_warning))
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, widthDp = 420, heightDp = 760)
+@Composable
+private fun PlayerSettingsScreenPreview() {
+    ComponentPreview {
+        PlayerSettingsScreen(
+            state = PlayerSettingsUiState(
+                kernel = "ExoPlayer",
+                kernelDisplay = "ExoPlayer",
+                mpvSettingsEnabled = false,
+                mpvSettingsSummary = stringResource(Res.string.mpv_settings_disabled_summary),
+                enableGoogleCast = false,
+                googleCastAvailable = true,
+                showBottomProgress = true,
+                playerSpeed = "1.0",
+                playerSpeedLabel = "1.0x",
+                longPressSpeedTimes = "2.5",
+                longPressSpeedTimesLabel = "2.5倍",
+                slideSensitivity = 5,
+                slideSensitivitySummary = stringResource(
+                    Res.string.current_slide_sensitivity,
+                    stringResource(Res.string.moderate)
+                ),
+            ),
+            kernelOptions = listOf(
+                "MediaPlayer" to "MediaPlayer",
+                "ExoPlayer" to "ExoPlayer",
+                "MpvPlayer" to "MpvPlayer"
+            ),
+            speedOptions = listOf("1.0x" to "1.0", "1.25x" to "1.25", "1.5x" to "1.5"),
+            longPressSpeedOptions = listOf("2.0倍" to "2", "2.5倍" to "2.5", "3.0倍" to "3"),
+            onKernelChange = {},
+            onEnableGoogleCastChange = {},
+            onShowBottomProgressChange = {},
+            onPlayerSpeedChange = {},
+            onLongPressSpeedChange = {},
+            onSlideSensitivityChange = {},
+            onOpenMpvSettings = {},
+        )
+    }
+}

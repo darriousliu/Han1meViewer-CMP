@@ -83,7 +83,7 @@ android {
         disable += setOf("EnsureInitializerMetadata", "Instantiatable")
     }
 
-    namespace = "io.github.daisukikaffuchino.han1meviewer.app"
+    namespace = "io.github.darriousliu.han1meviewer.app"
 
     androidResources {
         generateLocaleConfig = true
@@ -117,6 +117,8 @@ androidComponents {
 
 dependencies {
     implementation(project(":shared"))
+    // Manifest 直接声明了 WorkManager 的前台服务，需让 app 的 lint 能解析到该类。
+    implementation(libs.work.runtime)
 
     implementation(project.dependencies.platform(libs.compose.compose.bom))
     implementation(libs.androidx.activity.compose)

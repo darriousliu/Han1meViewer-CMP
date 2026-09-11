@@ -1,0 +1,33 @@
+package io.github.darriousliu.han1meviewer.logic
+
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.ObjCObjectVar
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import platform.Foundation.NSError
+import platform.LocalAuthentication.LAContext
+import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_get_main_queue
+
+/** 有 Face ID / Touch ID 或设备密码就算「设备是安全的」。 */
+@OptIn(ExperimentalForeignApi::class)
+internal actual fun isDeviceSecureCompat(): Boolean = memScoped {
+    val error = alloc<ObjCObjectVar<NSError?>>()
+    LAContext().canEvaluatePolicy(LAPolicyDeviceOwnerAuthentication, error.ptr)
+}
+
+internal actual val canRequestAppUnlock: Boolean = true
+
+/**
+ * DeviceOwnerAuthentication = Face ID / Touch ID，失败或没录入时回落到设备密码。
+ * iOS 不能像 Android 那样鉴权失败就退出应用，所以失败时保持遮罩，让用户点一下重试。
+ */
+internal actual fun requestAppUnlock(reason: String) {
+    LAContext().evaluatePolicy(LAPolicyDeviceOwnerAuthentication, reason) { success, _ ->
+        if (success) {
+            dispatch_async(dispatch_get_main_queue()) { AppLockGuard.onAuthenticated() }
+        }
+    }
+}

@@ -3,7 +3,7 @@
 TEAM_ID=
 
 PRODUCT_NAME=Han1meViewer
-PRODUCT_BUNDLE_IDENTIFIER=io.github.daisukikaffuchino.han1meviewer
+PRODUCT_BUNDLE_IDENTIFIER=io.github.darriousliu.han1meviewer
 
 CURRENT_PROJECT_VERSION=260805
 MARKETING_VERSION=26.3.2

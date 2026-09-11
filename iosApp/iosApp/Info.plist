@@ -38,7 +38,7 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>io.github.daisukikaffuchino.han1meviewer</string>
+			<string>io.github.darriousliu.han1meviewer</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>han1meviewer</string>

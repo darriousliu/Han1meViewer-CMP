@@ -1,0 +1,115 @@
+package io.github.darriousliu.han1meviewer
+
+import android.app.Activity
+import android.app.Application
+import android.content.ComponentName
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Bundle
+import androidx.core.app.NotificationChannelCompat
+import androidx.core.app.NotificationManagerCompat
+import io.github.darriousliu.han1meviewer.di.initAppOnce
+import io.github.darriousliu.han1meviewer.logic.SettingsRepository
+import io.github.darriousliu.han1meviewer.logic.datastore.DataStoreManager
+import io.github.darriousliu.han1meviewer.ui.crash.installAndroidCrashHandler
+import io.github.darriousliu.han1meviewer.util.AnimeShaders
+import io.github.darriousliu.han1meviewer.util.AppLanguageManager
+import io.github.darriousliu.utils.ActivityManager
+import io.github.darriousliu.utils.LogUtil
+import io.github.darriousliu.utils.applicationContext as globalApplicationContext
+import `is`.xyz.mpv.MPVLib
+import io.github.darriousliu.han1meviewer.di.initKoin
+import org.koin.android.ext.koin.androidContext
+
+/**
+ * @project Hanime1
+ * @author Yenaly Liew
+ * @time 2022/06/08 008 17:32
+ */
+class HanimeApplication : Application(), Application.ActivityLifecycleCallbacks {
+
+    companion object {
+        const val TAG = "HanimeApplication"
+    }
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        globalApplicationContext = this
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        installAndroidCrashHandler(applicationContext)
+        // Koin 要在任何 koinViewModel() 之前起来
+        initAppOnce { androidContext(this@HanimeApplication) }
+        registerActivityLifecycleCallbacks(this)
+        initNotificationChannel()
+        MPVLib.create(applicationContext)
+        MPVLib.init()
+
+        if (AnimeShaders.copyShaderAssets(applicationContext) <= 0) {
+            LogUtil.w(TAG, "Shader 复制失败")
+        }
+        if (AnimeShaders.copyCertAssets(applicationContext) <= 0) {
+            LogUtil.w(TAG, "cert 复制失败")
+        }
+        val selected = SettingsRepository.fakeLauncherIcon
+        switchLauncher(selected)
+    }
+
+    private fun initNotificationChannel() {
+        val nm = NotificationManagerCompat.from(this)
+
+        val hanimeDownloadChannel = NotificationChannelCompat.Builder(
+            DOWNLOAD_NOTIFICATION_CHANNEL,
+            NotificationManagerCompat.IMPORTANCE_HIGH
+        ).setName("Hanime Download").build()
+        nm.createNotificationChannel(hanimeDownloadChannel)
+
+        val appUpdateChannel = NotificationChannelCompat.Builder(
+            UPDATE_NOTIFICATION_CHANNEL,
+            NotificationManagerCompat.IMPORTANCE_HIGH
+        ).setName("App Update").build()
+        nm.createNotificationChannel(appUpdateChannel)
+    }
+    fun switchLauncher(alias: String) {
+        val pm = packageManager
+
+        val allAliases = listOf(
+            "io.github.darriousliu.han1meviewer.LauncherAliasDefault",
+            "io.github.darriousliu.han1meviewer.LauncherFakeCalc",
+            "io.github.darriousliu.han1meviewer.LauncherFakeCornhub",
+            "io.github.darriousliu.han1meviewer.LauncherFakeXxt"
+        )
+
+        allAliases.forEach { a ->
+            val state = if (a == alias)
+                PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+            else
+                PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+
+            pm.setComponentEnabledSetting(
+                ComponentName(this, a),
+                state,
+                PackageManager.DONT_KILL_APP
+            )
+        }
+    }
+
+    override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) = Unit
+
+    override fun onActivityStarted(activity: Activity) = Unit
+
+    override fun onActivityResumed(activity: Activity) {
+        ActivityManager.onActivityResumed(activity)
+    }
+
+    override fun onActivityPaused(activity: Activity) = Unit
+
+    override fun onActivityStopped(activity: Activity) = Unit
+
+    override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
+
+    override fun onActivityDestroyed(activity: Activity) =
+        ActivityManager.onActivityDestroyed(activity)
+}

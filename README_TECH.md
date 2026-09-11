@@ -75,17 +75,17 @@ flowchart TD
 
 | 平台 | 入口与调用链 |
 | --- | --- |
-| Android | [HanimeApplication.kt](shared/src/androidMain/kotlin/io/github/daisukikaffuchino/han1meviewer/HanimeApplication.kt) 初始化存储、平台网络与 Koin；[MainActivity.kt](shared/src/androidMain/kotlin/io/github/daisukikaffuchino/han1meviewer/ui/activity/MainActivity.kt) 承载界面 |
-| 桌面 | [main.kt](desktopApp/src/main/kotlin/io/github/daisukikaffuchino/han1meviewer/main.kt) 初始化 FileKit、`initAppOnce()` 和 mpv 预热，再进入 `nucleusApplication(backend = NucleusBackend.Tao)` |
-| iOS | `iosApp/iosApp/ContentView.swift` 调用 [MainViewController.kt](shared/src/iosMain/kotlin/io/github/daisukikaffuchino/han1meviewer/MainViewController.kt)，通过 `ComposeUIViewController` 承载 `App()` |
+| Android | [HanimeApplication.kt](shared/src/androidMain/kotlin/io/github/darriousliu/han1meviewer/HanimeApplication.kt) 初始化存储、平台网络与 Koin；[MainActivity.kt](shared/src/androidMain/kotlin/io/github/darriousliu/han1meviewer/ui/activity/MainActivity.kt) 承载界面 |
+| 桌面 | [main.kt](desktopApp/src/main/kotlin/io/github/darriousliu/han1meviewer/main.kt) 初始化 FileKit、`initAppOnce()` 和 mpv 预热，再进入 `nucleusApplication(backend = NucleusBackend.Tao)` |
+| iOS | `iosApp/iosApp/ContentView.swift` 调用 [MainViewController.kt](shared/src/iosMain/kotlin/io/github/darriousliu/han1meviewer/MainViewController.kt)，通过 `ComposeUIViewController` 承载 `App()` |
 
-共享启动逻辑在 [Initialization.kt](shared/src/commonMain/kotlin/io/github/daisukikaffuchino/han1meviewer/di/Initialization.kt)：先初始化 `DataStoreManager` 并安装 `SettingsRepository`，再应用语言和平台网络，最后启动 Koin。部分依赖创建时就会读取设置，这个顺序需要保留。
+共享启动逻辑在 [Initialization.kt](shared/src/commonMain/kotlin/io/github/darriousliu/han1meviewer/di/Initialization.kt)：先初始化 `DataStoreManager` 并安装 `SettingsRepository`，再应用语言和平台网络，最后启动 Koin。部分依赖创建时就会读取设置，这个顺序需要保留。
 
 `AppModule` 使用 `@ComponentScan` 扫描应用包；新增 `@KoinViewModel`、`@Single`、`@Factory` 后由 KSP 生成定义。平台初始化不要放入会反复重组的 Composable。
 
 ## 4. 页面、状态与导航
 
-以下未加源集前缀的 Kotlin 路径，均相对于 `shared/src/commonMain/kotlin/io/github/daisukikaffuchino/han1meviewer/`。
+以下未加源集前缀的 Kotlin 路径，均相对于 `shared/src/commonMain/kotlin/io/github/darriousliu/han1meviewer/`。
 
 ### 分层和数据流
 
@@ -157,7 +157,7 @@ Room 的 Entity、DAO 和数据库声明在共享源码中，各平台生成实�
 
 `BackupManager` 导出设置及关键 H 帧、签到、观看历史、下载记录等数据；不包含视频文件。设置备份和恢复会过滤登录信息及 Cookie。跨平台恢复后的文件 URI、目录权限和登录状态需要重新确认，不能把备份视为完整的数据目录复制。
 
-共享资源位于 `shared/src/commonMain/composeResources/`：
+共享资源位于 `shared/src/commonMain/composeResources/`，生成的 `Res` 包名显式固定为 `io.github.darriousliu.han1meviewer.generated.resources`，不随 Gradle 工程名称变化：
 
 - UI 使用 CMP 的 `Res`、`stringResource`、`painterResource`；Android 专属资源留在 `androidMain/res` 或 Android 壳中。
 - `files/h_keyframes/*.json` 是共享关键 H 帧输入。`:shared:generateHKeyframeIndex` 生成文件索引，`DatabaseRepo` 经 `Res.readBytes` 读取。
@@ -207,6 +207,8 @@ JVM / iOS 共用 FileKit 的目录选择和存储接口，目录授权通过 boo
 ## 10. 版本与更新
 
 [Config.kt](buildSrc/src/main/java/Config.kt) 的 `Config.App` 是应用标识、`VERSION_NAME` 与 `VERSION_CODE` 的唯一源头。Android 读取到 `defaultConfig`，共享源码通过 BuildKonfig 获得内部 `BuildConfig`，桌面使用 `desktopPackageVersion`；iOS 通过根任务 `syncIosVersion` 写入 `Config.xcconfig`。
+
+应用源码和 Android 正式版标识统一为 `io.github.darriousliu.han1meviewer`，Debug 安装标识添加 `.debug`。iOS 壳的 `PRODUCT_BUNDLE_IDENTIFIER` 使用同一正式版标识；macOS 的 `bundleID` 显式读取 `Config.App.APPLICATION_ID`。iOS 标识在 xcconfig 中维护，`syncIosVersion` 只同步版本字段。
 
 `BuildConfig` 保持 `internal`，避免导出到 ObjC 头后字段名与 Xcode 宏冲突。当前 `Config.isRelease` 只检查显式任务名中是否含大小写匹配的 `Release`；桌面普通打包与 Xcode 回调任务不满足这个条件，正式发布前必须核对共享 `DEBUG` 和 `APPLICATION_ID` 的生成结果，详见构建指南。
 

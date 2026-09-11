@@ -1,0 +1,14 @@
+package io.github.darriousliu.utils
+
+import androidx.compose.runtime.Composable
+import platform.UIKit.UIPasteboard
+
+@Composable
+actual fun rememberReadClipboardText(): suspend () -> String? = {
+    UIPasteboard.generalPasteboard.string
+}
+
+@Composable
+actual fun rememberCopyTextToClipboard(): (CharSequence) -> Unit = { text ->
+    UIPasteboard.generalPasteboard.string = text.toString()
+}

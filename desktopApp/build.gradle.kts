@@ -119,7 +119,7 @@ configurations.configureEach {
  * 因此**构建机必须有 Node.js**（Windows 上也就不再需要 WiX v3 了）。
  */
 nucleus.application {
-    mainClass = "io.github.daisukikaffuchino.han1meviewer.MainKt"
+    mainClass = "io.github.darriousliu.han1meviewer.MainKt"
     // 普通 run 与安装器也必须从 macOS 首线程启动；插件只为 Hot Reload 自动注入。
     if (System.getProperty("os.name").startsWith("Mac", ignoreCase = true)) {
         jvmArgs("-XstartOnFirstThread")
@@ -183,6 +183,7 @@ nucleus.application {
             }
         }
         macOS {
+            bundleID = Config.App.APPLICATION_ID
             iconFile.set(file("icons/han1meviewer.icns"))
             // Nucleus 默认按 SDK 26 构建，等于给 macOS 26+ 开 Liquid Glass。
             // 应用自己是 Material 3 全自绘，系统新拟态只会作用在窗口装饰与系统控件上，

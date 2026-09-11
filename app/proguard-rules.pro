@@ -30,6 +30,6 @@
 -keep class is.xyz.mpv.** { *; }
 -keep class lis.xyz.mpv.** { *; }
 
--keepclasseswithmembernames class io.github.daisukikaffuchino.han1meviewer.ui.screen.video.VideoRouteHostScreenKt {
+-keepclasseswithmembernames class io.github.darriousliu.han1meviewer.util.SignatureCheckKt {
     native <methods>;
 }

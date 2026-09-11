@@ -20,7 +20,7 @@ object Config {
      * 别在任何 build.gradle.kts 或源码里再写一份字面量。
      */
     object App {
-        const val APPLICATION_ID = "io.github.daisukikaffuchino.han1meviewer"
+        const val APPLICATION_ID = "io.github.darriousliu.han1meviewer"
         const val VERSION_CODE = 260805
         const val VERSION_NAME = "26.3.2"
 

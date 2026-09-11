@@ -44,7 +44,7 @@ val releaseBuild = isRelease
 
 // AGP 的 KMP 库插件没有 buildFeatures.buildConfig，BuildConfig 由 BuildKonfig 生成
 buildkonfig {
-    packageName = "io.github.daisukikaffuchino.han1meviewer"
+    packageName = "io.github.darriousliu.han1meviewer"
     // 必须是 internal（objectName 而非 exposeObjectWithName）：public 会导出进
     // ObjC 头，其中的 DEBUG 字段撞 Xcode 的 DEBUG=1 宏，iOS 编译当场崩
     objectName = "BuildConfig"
@@ -75,9 +75,9 @@ kotlin {
     }
 
     android {
-        // 与原 :app 的 namespace 逐字相同，R/BuildConfig 才留在原包下；
-        // 代价是 :app 让位成 ...han1meviewer.app（applicationId 不变）
-        namespace = "io.github.daisukikaffuchino.han1meviewer"
+        // 共享 Android 代码使用应用源码命名空间，:app 壳使用 ...han1meviewer.app；
+        // 安装标识由 Config.App.APPLICATION_ID 统一提供。
+        namespace = "io.github.darriousliu.han1meviewer"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
 
@@ -86,7 +86,7 @@ kotlin {
             // 让 kotlin-parcelize 认 commonMain 里那个 expect 注解
             freeCompilerArgs.addAll(
                 "-P",
-                "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=io.github.daisukikaffuchino.han1meviewer.util.Parcelize",
+                "plugin:org.jetbrains.kotlin.parcelize:additionalAnnotation=io.github.darriousliu.han1meviewer.util.Parcelize",
             )
         }
         androidResources {
@@ -112,7 +112,7 @@ kotlin {
         target.binaries.framework {
             baseName = "Shared"
             isStatic = true
-            binaryOption("bundleId", "io.github.daisukikaffuchino.han1meviewer.shared")
+            binaryOption("bundleId", "io.github.darriousliu.han1meviewer.shared")
         }
     }
 
@@ -261,6 +261,8 @@ configurations.configureEach {
 compose {
     resources {
         publicResClass = true
+        // 显式固定资源包名，避免工程目录或 rootProject.name 改名影响源码导入。
+        packageOfResClass = "io.github.darriousliu.han1meviewer.generated.resources"
     }
 }
 
@@ -303,11 +305,11 @@ val generateHKeyframeIndex = tasks.register("generateHKeyframeIndex") {
             ?.map { it.name }
             ?.sorted()
             .orEmpty()
-        val pkgDir = out.get().asFile.resolve("io/github/daisukikaffuchino/han1meviewer/logic")
+        val pkgDir = out.get().asFile.resolve("io/github/darriousliu/han1meviewer/logic")
         pkgDir.mkdirs()
         pkgDir.resolve("HKeyframeIndex.kt").writeText(
             buildString {
-                appendLine("package io.github.daisukikaffuchino.han1meviewer.logic")
+                appendLine("package io.github.darriousliu.han1meviewer.logic")
                 appendLine()
                 appendLine("/** 构建期生成，勿手改。见 shared/build.gradle.kts 的 generateHKeyframeIndex。 */")
                 appendLine("internal val H_KEYFRAME_FILES: List<String> = listOf(")

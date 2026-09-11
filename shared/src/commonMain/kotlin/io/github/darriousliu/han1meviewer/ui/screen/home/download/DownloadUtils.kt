@@ -1,0 +1,122 @@
+package io.github.darriousliu.han1meviewer.ui.screen.home.download
+
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.stringResource
+import io.github.darriousliu.han1meviewer.logic.entity.download.DownloadGroupEntity
+import io.github.darriousliu.han1meviewer.logic.entity.download.VideoWithCategories
+import io.github.darriousliu.han1meviewer.logic.model.DownloadHeaderNode
+import io.github.darriousliu.han1meviewer.logic.model.DownloadItemNode
+import io.github.darriousliu.han1meviewer.logic.model.DownloadedNode
+import io.github.darriousliu.han1meviewer.logic.state.DownloadState
+import io.github.darriousliu.han1meviewer.generated.resources.Res
+import io.github.darriousliu.han1meviewer.generated.resources.already_in_queue
+import io.github.darriousliu.han1meviewer.generated.resources.download_complete
+import io.github.darriousliu.han1meviewer.generated.resources.download_failed_tap_retry
+import io.github.darriousliu.han1meviewer.generated.resources.download_progress_percent
+import io.github.darriousliu.han1meviewer.generated.resources.loading
+import io.github.darriousliu.han1meviewer.generated.resources.paused
+import io.github.darriousliu.han1meviewer.generated.resources.ungrouped
+import io.github.darriousliu.han1meviewer.generated.resources.ic_check_circle
+import io.github.darriousliu.han1meviewer.generated.resources.ic_download
+import io.github.darriousliu.han1meviewer.generated.resources.ic_error_outline
+import io.github.darriousliu.han1meviewer.generated.resources.ic_pause
+import io.github.darriousliu.han1meviewer.generated.resources.ic_play_arrow
+import net.sergeych.sprintf.sprintf
+
+/**
+ * 将已下载视频列表按分组 ID 转换为 [DownloadHeaderNode] 列表。
+ *
+ * @param groupIdToNameMap 分组 ID -> 名称映射
+ * @param collapseDownloadedGroup 默认是否折叠分组
+ * @return 按分组聚合后的 Header 节点列表
+ */
+fun List<VideoWithCategories>.toNodeList(
+    groupIdToNameMap: Map<Int, String>,
+    collapseDownloadedGroup: Boolean,
+): List<DownloadHeaderNode> {
+    val groupedData = this.groupBy { it.video.groupId }.toSortedMap2()
+    return buildList {
+        for ((groupId, videos) in groupedData) {
+            add(
+                DownloadHeaderNode(
+                    groupKey = groupIdToNameMap[groupId] ?: "ID: $groupId",
+                    originalVideos = videos,
+                    isExpanded = !collapseDownloadedGroup,
+                )
+            )
+        }
+    }
+}
+
+/**
+ * 将 Header 列表展开为扁平节点列表（Header + 展开状态下的子项）。
+ *
+ * @return 扁平化的 [DownloadedNode] 列表
+ */
+fun List<DownloadHeaderNode>.toFlatNodeList(): List<DownloadedNode> {
+    val flatList = mutableListOf<DownloadedNode>()
+    for (header in this) {
+        flatList.add(header)
+        if (header.isExpanded) {
+            header.originalVideos.forEach { video ->
+                flatList.add(DownloadItemNode(video, header.groupKey))
+            }
+        }
+    }
+    return flatList
+}
+
+/**
+ * 将未分组的分组名称替换为"未分组"字符串资源。
+ *
+ * @param List<DownloadGroupEntity> 分组列表
+ * @return 替换后的分组列表
+ */
+@Composable
+fun List<DownloadGroupEntity>.toDisplayGroups(): List<DownloadGroupEntity> = map { group ->
+    if (group.id == DownloadGroupEntity.DEFAULT_GROUP_ID) {
+        group.copy(name = stringResource(Res.string.ungrouped))
+    } else {
+        group
+    }
+}
+
+/**
+ * 下载状态对应的显示文本。
+ *
+ * @param state 下载状态
+ * @param progress 下载进度 (0-100)
+ * @return 本地化文本
+ */
+@Composable
+fun downloadStateText(state: DownloadState, progress: Int): String = when (state) {
+    DownloadState.Queued -> stringResource(Res.string.already_in_queue)
+    DownloadState.Downloading -> stringResource(
+        Res.string.download_progress_percent,
+        "%d%%".sprintf(progress)
+    )
+    DownloadState.Paused -> stringResource(Res.string.paused)
+    DownloadState.Failed -> stringResource(Res.string.download_failed_tap_retry)
+    DownloadState.Finished -> stringResource(Res.string.download_complete)
+    DownloadState.Unknown -> stringResource(Res.string.loading)
+}
+
+/**
+ * 下载状态对应的图标资源 ID。
+ *
+ * @param state 下载状态
+ * @return 图标 drawable 资源 ID
+ */
+fun downloadStateIcon(state: DownloadState): DrawableResource = when (state) {
+    DownloadState.Queued -> Res.drawable.ic_play_arrow
+    DownloadState.Downloading -> Res.drawable.ic_pause
+    DownloadState.Paused -> Res.drawable.ic_play_arrow
+    DownloadState.Failed -> Res.drawable.ic_error_outline
+    DownloadState.Finished -> Res.drawable.ic_check_circle
+    DownloadState.Unknown -> Res.drawable.ic_download
+}
+
+/** kotlin 公共库没有 toSortedMap，按 key 排序后保序返回。 */
+private fun <K : Comparable<K>, V> Map<K, V>.toSortedMap2(): Map<K, V> =
+    entries.sortedBy { it.key }.associate { it.key to it.value }
