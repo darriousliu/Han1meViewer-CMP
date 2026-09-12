@@ -21,7 +21,8 @@ glance = "1.1.1"
 kotlin = "2.4.10"
 # TAO 与新版 WebView 需要 Compose 1.12；Android BOM 仍独立维护。
 composeMultiplatform = "1.12.0"
-composeMultiplatformMaterial3 = "1.11.0-alpha07"
+# 与 Compose 1.12 配套；1.11 的文本框样式 ABI 与 Foundation 1.12 不兼容，会抛 AbstractMethodError。
+composeMultiplatformMaterial3 = "1.12.0-alpha03"
 ksp = "2.3.11"
 # Dependencies
 core = "1.19.0"

@@ -72,8 +72,7 @@ kotlin {
         // CMP 的 BackHandler 标了 @ExperimentalComposeUiApi，用到的地方会越来越多，
         // 在模块级别开一次比逐文件 @OptIn 好维护
         freeCompilerArgs.add("-opt-in=androidx.compose.ui.ExperimentalComposeUiApi")
-        // material3 在 1.11 线上还有大量 API 标着实验性（1.12 里才转正），
-        // 逐文件 @OptIn 要改一百多处，模块级开一次
+        // CMP Material3 的部分 API 仍为实验性，统一在模块级开启。
         freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3Api")
         freeCompilerArgs.add("-opt-in=androidx.compose.material3.ExperimentalMaterial3ExpressiveApi")
     }
@@ -127,6 +126,11 @@ kotlin {
             implementation(kotlin("test"))
             implementation(libs.ktor.client.mock)
             implementation(libs.coroutines.test)
+        }
+
+        jvmTest.dependencies {
+            // 离屏渲染测试也需要当前平台的 Skiko 原生库。
+            runtimeOnly(compose.desktop.currentOs)
         }
 
         // android 与 jvm 共用的中间源集：DoH、ProxySelector、磁盘缓存、限速这些
