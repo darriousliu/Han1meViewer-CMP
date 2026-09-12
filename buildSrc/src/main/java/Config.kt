@@ -24,6 +24,12 @@ object Config {
         const val VERSION_CODE = 260805
         const val VERSION_NAME = "26.3.2"
 
+        const val GITHUB_OWNER = "darriousliu"
+        const val GITHUB_REPO = "Han1meViewer-CMP"
+        const val GITHUB_REPOSITORY = "$GITHUB_OWNER/$GITHUB_REPO"
+        const val REPOSITORY_URL = "https://github.com/$GITHUB_REPOSITORY"
+        const val UPDATE_MANIFEST_URL = "$REPOSITORY_URL/releases/latest/download/update.json"
+
         /** debug 构建带 `.debug` 后缀，与 :app 的 applicationIdSuffix 一致。 */
         fun applicationId(isRelease: Boolean) =
             if (isRelease) APPLICATION_ID else "$APPLICATION_ID.debug"
@@ -48,7 +54,34 @@ object Config {
     }
 
     val Project.isRelease: Boolean
-        get() = gradle.startParameter.taskNames.any { it.contains("Release") }
+        get() = isReleaseBuild(
+            taskNames = gradle.startParameter.taskNames,
+            explicitRelease = providers.gradleProperty("hanimeRelease").orNull,
+            xcodeConfiguration = providers.environmentVariable("CONFIGURATION").orNull,
+        )
+
+    /** CI 显式指定模式；本地同时识别 Android、桌面分发任务和 Xcode 回调。 */
+    fun isReleaseBuild(
+        taskNames: List<String>,
+        explicitRelease: String? = null,
+        xcodeConfiguration: String? = null,
+    ): Boolean {
+        if (explicitRelease != null) {
+            return requireNotNull(explicitRelease.trim().lowercase().toBooleanStrictOrNull()) {
+                "hanimeRelease 只能是 true 或 false，例如 -PhanimeRelease=true"
+            }
+        }
+
+        val tasks = taskNames.map { it.substringAfterLast(':') }
+        if (tasks.any { it.contains("release", ignoreCase = true) }) return true
+        val desktopDistributionTasks = setOf(
+            "packageDistributionForCurrentOS", "createDistributable",
+            "packageDmg", "packageZip", "packageNsis", "packageUberJarForCurrentOS",
+        )
+        if (tasks.any { it in desktopDistributionTasks }) return true
+        return "embedAndSignAppleFrameworkForXcode" in tasks &&
+            xcodeConfiguration.equals("Release", ignoreCase = true)
+    }
 
     object Version {
 

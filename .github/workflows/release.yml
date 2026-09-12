@@ -32,6 +32,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: 检出发布提交
+        uses: actions/checkout@v6
+
       - name: 下载全部产物
         uses: actions/download-artifact@v8
         with:
@@ -65,6 +68,15 @@ jobs:
             ls release/$pat >/dev/null 2>&1 || { echo "缺少桌面产物: $pat"; exit 1; }
           done
           ls -lh release
+
+      - name: 生成 CMP 更新通知
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python3 .github/scripts/generate_update_manifest.py \
+            --tag "$RELEASE_TAG" \
+            --repository "$GITHUB_REPOSITORY" \
+            --output release/update.json
 
       - name: 合并 macOS 的更新清单
         # dmg/ 与 zip/ 各生成一份 latest-mac.yml，各自只列自己那个文件，直接传上去会互相覆盖。
@@ -125,6 +137,6 @@ jobs:
             | Windows | `*-win-x64.exe` / `*-win-x64.zip` | exe 为 NSIS 安装包（支持覆盖升级与差分自动更新），zip 为免安装版 |
             | macOS | `*-mac-arm64.dmg` / `*-mac-arm64.zip` | Apple 芯片；dmg 用于首装，zip 是自动更新用的，别手动下 |
 
-            `latest*.yml` 与 `*.blockmap` 是桌面端自动更新用的元数据，请勿删除。
+            `update.json` 是四端更新通知，`latest*.yml` 与 `*.blockmap` 是桌面自动更新元数据，请勿删除。
 
             > macOS 未公证，首次打开需 `xattr -dr com.apple.quarantine /Applications/Han1meViewer.app`

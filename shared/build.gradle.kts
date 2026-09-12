@@ -57,6 +57,10 @@ buildkonfig {
         )
         buildConfigField(STRING, "VERSION_NAME", Config.App.VERSION_NAME, const = true)
         buildConfigField(INT, "VERSION_CODE", Config.App.VERSION_CODE.toString(), const = true)
+        buildConfigField(STRING, "GITHUB_OWNER", Config.App.GITHUB_OWNER, const = true)
+        buildConfigField(STRING, "GITHUB_REPO", Config.App.GITHUB_REPO, const = true)
+        buildConfigField(STRING, "GITHUB_REPOSITORY", Config.App.GITHUB_REPOSITORY, const = true)
+        buildConfigField(STRING, "UPDATE_MANIFEST_URL", Config.App.UPDATE_MANIFEST_URL, const = true)
         buildConfigField(INT, "SEARCH_YEAR_RANGE_END", Config.thisYear.toString(), const = true)
     }
 }
@@ -119,6 +123,12 @@ kotlin {
     applyDefaultHierarchyTemplate()
 
     sourceSets {
+        commonTest.dependencies {
+            implementation(kotlin("test"))
+            implementation(libs.ktor.client.mock)
+            implementation(libs.coroutines.test)
+        }
+
         // android 与 jvm 共用的中间源集：DoH、ProxySelector、磁盘缓存、限速这些
         // Ktor 没有对应物、只能直接用 OkHttp API 的东西放这里，iOS 走 Darwin 另写
         val androidJvmMain = create("androidJvmMain") {

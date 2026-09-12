@@ -8,8 +8,8 @@ package io.github.darriousliu.han1meviewer.logic.update
  * 调用方退回原来那条「打开浏览器到下载页」的老路。
  *
  * 注意这与 [io.github.darriousliu.han1meviewer.logic.AppUpdateChecker] 是两件事：
- * 「有没有新版、公告、要不要强制」仍然由 AppUpdateChecker 从腾讯云 COS 的 update.json 判定，
- * 三端行为一致；这里只负责桌面端「点了更新之后怎么把新版装上」。
+ * 「有没有新版、公告、要不要强制」由 AppUpdateChecker 从 CMP Release 的 update.json 判定，
+ * 四端行为一致；这里只负责桌面端「点了更新之后怎么把新版装上」。
  */
 sealed interface InAppUpdateStage {
     /** [percent] 为 0f..1f。[differential] 为真表示命中了 blockmap 差分，只下增量块。 */

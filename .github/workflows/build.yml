@@ -20,6 +20,8 @@ permissions:
   contents: read
 
 env:
+  # 四端 CI 都构建发行版；Xcode 回调的 Gradle 进程也会继承此项目属性。
+  ORG_GRADLE_PROJECT_hanimeRelease: "true"
   # 四个 job 统一 25，与 gradle/gradle-daemon-jvm.properties 里的 toolchainVersion 对齐。
   # 桌面端必须是 25：Nucleus 的 AOT cache 是 JDK 25 的能力，而 jlink 出运行时、跑 AOT
   # 训练轮用的都是守护进程这份 JDK。Android（AGP 9 + R8）与 iOS 在 25 上实测无问题，
@@ -69,9 +71,13 @@ jobs:
           mkdir -p ~/.gradle
           echo "org.gradle.jvmargs=${GRADLE_JVMARGS}" >> ~/.gradle/gradle.properties
 
+      - name: 检查发行模式与更新通知
+        run: |
+          ./gradlew :buildSrc:test :shared:jvmTest --stacktrace
+          python3 -B -m unittest discover -s .github/scripts -p 'test_*.py'
+
       - name: 构建 Release APK
-        # 任务名里带 Release，Config.isRelease 才为真：BuildKonfig 的 DEBUG=false、
-        # applicationId 不带 .debug。别改成 assemble 之类的写法。
+        # CI 已显式启用发行模式；仍明确选择 Android Release 变体。
         # abi split 只出 arm64-v8a（见 :app 的 splits 配置），所以只有一个 apk。
         run: ./gradlew :app:assembleRelease --stacktrace
 

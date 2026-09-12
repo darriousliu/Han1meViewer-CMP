@@ -210,14 +210,14 @@ JVM / iOS 共用 FileKit 的目录选择和存储接口，目录授权通过 boo
 
 应用源码和 Android 正式版标识统一为 `io.github.darriousliu.han1meviewer`，Debug 安装标识添加 `.debug`。iOS 壳的 `PRODUCT_BUNDLE_IDENTIFIER` 使用同一正式版标识；macOS 的 `bundleID` 显式读取 `Config.App.APPLICATION_ID`。iOS 标识在 xcconfig 中维护，`syncIosVersion` 只同步版本字段。
 
-`BuildConfig` 保持 `internal`，避免导出到 ObjC 头后字段名与 Xcode 宏冲突。当前 `Config.isRelease` 只检查显式任务名中是否含大小写匹配的 `Release`；桌面普通打包与 Xcode 回调任务不满足这个条件，正式发布前必须核对共享 `DEBUG` 和 `APPLICATION_ID` 的生成结果，详见构建指南。
+`BuildConfig` 保持 `internal`，避免导出到 ObjC 头后字段名与 Xcode 宏冲突。`Config.isRelease` 优先读取 `-PhanimeRelease=true|false`；未指定时识别 Android / Kotlin 的 Release 任务、桌面分发任务，以及 Xcode 回调中的 `CONFIGURATION=Release`。普通 `run` 和 Debug 构建保留调试模式。四端 CI 通过 `ORG_GRADLE_PROJECT_hanimeRelease=true` 显式启用发行模式，Xcode 回调进程也会继承此属性。
 
 更新分两层：
 
-1. `logic/AppUpdateChecker.kt` 从维护者的 COS `update.json` 读取版本、下载页、更新说明和公告，按 `versionCode` 决定是否提示更新。
+1. `logic/AppUpdateChecker.kt` 从 CMP 仓库最新正式 Release 的 `update.json` 附件读取版本、下载页、更新说明和公告，按 `versionCode` 决定是否提示更新。`AppUpdateManifest.kt` 校验协议版本、仓库身份和对应 tag 的下载地址；旧 COS 缓存和其他仓库的通知不会生效。首次发布前的 404 表示暂无更新，网络故障时仅回退到有效的 CMP 缓存。
 2. 桌面 `logic/update/InAppUpdater.jvm.kt` 使用 Nucleus 读取 GitHub Release 的 `latest.yml` / `latest-mac.yml`，下载、校验并安装更新。安装形态不支持时回退到下载页；Android / iOS 使用下载页更新流程。
 
-GitHub Release 工作流不会发布 COS JSON。桌面文件名、版本、清单中的 URL 和校验值必须对应；先发布完整 Release 附件，再更新 JSON 通知。
+GitHub 仓库身份统一在 `Config.App` 维护，经 BuildKonfig 提供给共享代码。`release.yml` 调用 `.github/scripts/generate_update_manifest.py`，从同一 `Config.kt` 读取版本和仓库，检查 tag 一致后将 `update.json` 与安装包一同上传草稿。公开正式 Release 后通知随附件生效，无需另外维护 COS。桌面文件名、版本、清单中的 URL 和校验值仍须对应。
 
 ## 11. 开发验证
 
@@ -238,6 +238,10 @@ GitHub Release 工作流不会发布 COS JSON。桌面文件名、版本、清�
 
 # 本机桌面运行
 ./gradlew :desktopApp:run
+
+# 发行模式与更新通知回归
+./gradlew :buildSrc:test :shared:jvmTest
+python3 -B -m unittest discover -s .github/scripts -p 'test_*.py'
 ```
 
 按改动范围执行相关检查。共享 UI、模型、网络或依赖改动要覆盖受影响的平台；iOS 还需通过 Xcode 编译 Swift 壳。正式发布额外验证 Android R8、iOS Release 链接、桌面打包和最终安装包，不用编译结果代替功能回归。
